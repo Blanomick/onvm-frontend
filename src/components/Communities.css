@@ -1,0 +1,21 @@
+.messages {
+    border: 1px solid #ccc;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: scroll;
+  }
+  
+  .new-message {
+    display: flex;
+    margin-top: 10px;
+  }
+  
+  .new-message input {
+    flex: 1;
+    padding: 5px;
+  }
+  
+  .new-message button {
+    padding: 5px 10px;
+  }
+  

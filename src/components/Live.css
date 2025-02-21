@@ -1,0 +1,119 @@
+/* Style général pour la page de direct */
+.live-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background-color: #f9f9f9;
+    font-family: Arial, sans-serif;
+    color: #333;
+}
+
+/* Titre principal */
+.live-container h2 {
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Style pour la vidéo en direct */
+.live-video {
+    width: 100%;
+    max-width: 600px;
+    height: 340px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    background-color: #000;
+}
+
+/* Bouton de démarrage et d'arrêt du direct */
+.live-container button {
+    background-color: #ff4d4f;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.live-container button:hover {
+    background-color: #ff3335;
+}
+
+/* Liste des utilisateurs en direct */
+.active-live-users {
+    width: 100%;
+    max-width: 600px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.active-live-users h3 {
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    color: #333;
+}
+
+/* Style pour chaque utilisateur en direct */
+.live-user-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.live-user-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* Image de profil pour les utilisateurs en direct */
+.live-profile-picture {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+    border: 2px solid #ff4d4f;
+}
+
+/* Nom de l'utilisateur en direct avec lien */
+.live-user-name {
+    font-size: 1em;
+    color: #333;
+    text-decoration: none;
+    font-weight: bold;
+    margin-right: auto;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.live-user-name:hover {
+    color: #ff4d4f;
+}
+
+/* Style pour les réactions (emojis) */
+.reaction-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.reaction-button {
+    background-color: transparent;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    margin: 0 5px;
+    transition: transform 0.2s ease;
+}
+
+.reaction-button:hover {
+    transform: scale(1.2);
+}

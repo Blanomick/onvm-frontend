@@ -1,0 +1,88 @@
+.auth-container {
+    background-color: whitesmoke;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .site-name {
+    color: #ffffff;
+    font-size: 3rem;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  .auth-toggle {
+    display: flex;
+    align-items: center;
+    color: #000000;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+  }
+  
+  .toggle-button {
+    background-color: #160342;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-left: 10px;
+    cursor: pointer;
+  }
+  
+  .toggle-arrow {
+    font-size: 1.2rem;
+  }
+  
+  .auth-form {
+    background-color: #000000;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.3);
+  }
+  
+  .input-container {
+    margin-bottom: 15px;
+  }
+  
+  .input-container input {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+  
+  .submit-button {
+    width: 100%;
+    background-color: #f6c700;
+    color: rgb(58, 58, 63);
+    border: none;
+    padding: 12px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .submit-button:hover {
+    background-color: #e6b800;
+  }
+  
+  .switch-button {
+    margin-top: 10px;
+    background: none;
+    border: none;
+    color: #f6c700;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  .switch-button:hover {
+    text-decoration: underline;
+  }
+  

@@ -1,0 +1,165 @@
+/* Styles pour la page de recherche */
+.search-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  height: 100vh;
+  background-color: #f4f4f4;
+  font-family: Arial, sans-serif;
+}
+
+/* Style de l'en-tête */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+}
+
+.header .logo {
+  font-size: 24px;
+  font-weight: bold;
+}
+
+.header-icons {
+  display: flex;
+  align-items: center;
+}
+
+.header-icons svg {
+  font-size: 24px;
+  margin-left: 15px;
+  cursor: pointer;
+}
+
+/* Style du formulaire de recherche */
+.search-form {
+  margin: 20px 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.search-form input {
+  padding: 10px;
+  width: 80%;
+  max-width: 500px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  font-size: 16px;
+}
+
+.search-form button {
+  padding: 10px 20px;
+  margin-left: 10px;
+  border: none;
+  background-color: #007bff;
+  color: white;
+  font-size: 16px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.search-form button:hover {
+  background-color: #0056b3;
+}
+
+/* Styles pour les résultats de la recherche */
+.search-results {
+  width: 100%;
+  max-width: 600px;
+  padding: 10px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.search-result {
+  width: 100%;
+  background-color: white;
+  margin: 10px 0;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 10px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: box-shadow 0.3s;
+}
+
+.search-result:hover {
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.search-result img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 15px;
+}
+
+.user-info {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-info p {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.follow-btn {
+  padding: 8px 12px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.follow-btn:hover {
+  background-color: #0056b3;
+}
+
+/* Style du texte lorsque aucun utilisateur n'est trouvé */
+.search-results p {
+  font-size: 18px;
+  color: #888;
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Barre de navigation en bas de la page */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background-color: #dddfe2;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  color: rgb(211, 203, 203);
+}
+
+.bottom-nav svg {
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.bottom-nav svg:hover {
+  color: #ebf0f5;
+}

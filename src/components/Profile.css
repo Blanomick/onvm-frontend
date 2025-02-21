@@ -1,0 +1,248 @@
+/* Profile.css */
+
+/* Global styles */
+body {
+  background-color: #f3f3f3;
+  margin: 0;
+  font-family: 'Arial', sans-serif;
+  color: #333;
+}
+
+.profile-container {
+  max-width: 900px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+/* Profile Header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.profile-picture {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #000;
+}
+
+.profile-info {
+  flex: 1;
+  margin-left: 20px;
+}
+
+.profile-info h2 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.profile-info p {
+  font-size: 1rem;
+  margin: 5px 0;
+}
+
+.profile-info button {
+  background-color: #000;
+  color: #fff;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.profile-info button:hover {
+  background-color: #444;
+}
+
+/* Profile Tabs */
+.profile-tabs {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  gap: 10px;
+}
+
+.tab-button {
+  background-color: transparent;
+  border: none;
+  font-size: 1rem;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.tab-button.active {
+  color: #000;
+  border-bottom: 3px solid #000;
+  font-weight: bold;
+}
+
+.tab-button:hover {
+  color: #444;
+}
+
+/* Bio Section */
+.profile-bio {
+  background-color: #f9f9f9;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+}
+
+.profile-bio textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  resize: none;
+}
+
+.profile-bio button {
+  background-color: #000;
+  color: white;
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.profile-bio button:hover {
+  background-color: #444;
+}
+
+/* Publications & Retweets */
+.profile-post {
+  background-color: #fff;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  position: relative;
+}
+
+.profile-post img,
+.profile-post video {
+  max-width: 100%;
+  height: auto;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.profile-post p {
+  font-size: 1rem;
+  color: #555;
+}
+
+.post-actions {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 10px;
+}
+
+.post-actions button {
+  background-color: #000;
+  color: #fff;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.post-actions button:hover {
+  background-color: #444;
+}
+
+.delete-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: red;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Comments Section */
+.comments-section {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #ddd;
+}
+
+.comment {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.comment img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+.comment p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  display: flex;
+  justify-content: space-around;
+  background-color: #000;
+  padding: 10px;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  border-top: 1px solid #ddd;
+}
+
+.bottom-nav svg {
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.bottom-nav svg:hover {
+  color: #f1f1f1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 10px;
+  }
+
+  .profile-picture {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-info h2 {
+    font-size: 1.5rem;
+  }
+
+  .tab-button {
+    font-size: 0.9rem;
+  }
+
+  .bottom-nav svg {
+    font-size: 1.2rem;
+  }
+}
