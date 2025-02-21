@@ -3,9 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 // Configuration de l'URL du backend (local ou en ligne)
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL;
+
+if (!API_URL) {
+  throw new Error("❌ ERREUR : La variable REACT_APP_API_URL n'est pas définie !");
+}
 
 console.log("🔹 API URL utilisée :", API_URL);
+
 
 const Auth = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
