@@ -3,13 +3,16 @@ import { useNavigate } from 'react-router-dom';
 import './Auth.css';
 
 // Configuration de l'URL du backend (local ou en ligne)
+// Configuration de l'URL du backend (local ou en ligne)
 const API_URL = process.env.REACT_APP_API_URL;
+
+console.log("🚀 Vérification Netlify :");
+console.log("🔹 Valeur de process.env.REACT_APP_API_URL :", process.env.REACT_APP_API_URL);
+console.log("🔹 API URL utilisée :", API_URL);
 
 if (!API_URL) {
   throw new Error("❌ ERREUR : La variable REACT_APP_API_URL n'est pas définie !");
 }
-
-console.log("🔹 API URL utilisée :", API_URL);
 
 
 const Auth = ({ onLogin }) => {
