@@ -126,6 +126,13 @@ const Live = ({ currentUser }) => {
         };
     }, [fetchExtraProfileData]);
 
+
+    useEffect(() => {
+        console.log("🔹 Réactions chargées :", reactions);
+    }, [reactions]);
+
+    
+
     return (
         <div className="live-container">
             <h2>Live Streaming</h2>

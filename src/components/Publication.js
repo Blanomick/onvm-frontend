@@ -47,6 +47,9 @@ const Publication = ({ user }) => {
   const [showMenu, setShowMenu] = useState(false);
   
 
+
+  
+
   const navigate = useNavigate();
   const mediaRecorderRef = useRef(null);
   const lastScrollTop = useRef(0);
@@ -284,6 +287,10 @@ const closeShareModal = () => {
 };
 
   
+useEffect(() => {
+  console.log("🔹 Retweets chargés :", retweets);
+  console.log("🔹 Likes chargés :", likes);
+}, [retweets, likes]);
 
 
   
