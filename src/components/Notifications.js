@@ -3,11 +3,6 @@ import { FaHome, FaSearch, FaBell, FaUserCircle, FaPlus } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import './Notifications.css';
 
-
-const apiUrl = process.env.REACT_APP_API_URL;
-
-console.log("API URL utilisée :", apiUrl);
-
 const Notifications = ({ user }) => {
   const navigate = useNavigate();
 

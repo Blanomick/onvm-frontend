@@ -13,9 +13,6 @@ import CreateCommunity from './components/CreateCommunity';
 import MainNavigation from './components/MainNavigation';
 import Live from './components/Live';
 
-console.log("API URL depuis React :", process.env.REACT_APP_API_URL);
-
-
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
   const [isAdmin, setIsAdmin] = useState(false); // Indique si l'utilisateur est administrateur

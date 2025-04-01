@@ -3,12 +3,6 @@ import { FaHome, FaSearch, FaPlus, FaBell, FaUserCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import './BottomNav.css'; // Add some basic styling to position the buttons at the bottom
 
-
-
-const apiUrl = process.env.REACT_APP_API_URL;
-
-console.log("API URL utilisée :", apiUrl);
-
 const BottomNav = () => {
   const navigate = useNavigate();
 

@@ -8,10 +8,7 @@ import BottomNav from './BottomNav';
 import { FaHome, FaSearch, FaPlus, FaBell, FaUser } from 'react-icons/fa';
 
 
-
 const apiUrl = process.env.REACT_APP_API_URL;
-
-console.log("API URL utilisée :", apiUrl);
 
 
 
@@ -37,8 +34,8 @@ const Profile = ({ currentUser }) => {
   const [response, setResponse] = useState(null);
   const [activeTab, setActiveTab] = useState('publications'); // Onglet actif : 'publications' ou 'retweets'
   const [showBottomNav, setShowBottomNav] = useState(true); // Par défaut, la barre est visible
-  const [isCreating, setIsCreating] = useState(false);
-
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [likes, setLikes] = useState({});
 
 
 
@@ -81,6 +78,19 @@ const Profile = ({ currentUser }) => {
       setPosts(postsData);
       setRetweets(retweetsData);
       setIsFollowing(isFollowingData.isFollowing);
+
+      setFollowerCount(followerData.totalFollowers || 0);
+setPosts(postsData);
+setRetweets(retweetsData);
+setIsFollowing(isFollowingData.isFollowing);
+
+// ✅ Ajoute ce bloc ici :
+const likesMap = {};
+[...postsData, ...retweetsData].forEach(post => {
+  likesMap[post.id] = post.likes || 0;
+});
+setLikes(likesMap);
+
     } catch (error) {
       console.error('[ERREUR] Erreur lors de la récupération du profil:', error);
     }
@@ -155,23 +165,20 @@ const Profile = ({ currentUser }) => {
     });
   };
 
+  
 
   // Fonction pour gérer les retweets
-  
-    
-    
-
   const handleRetweet = async (postId) => {
     try {
+      // Remplace l'URL par celle de ton API pour le retweet
       const response = await fetch(`${apiUrl}/api/publications/${postId}/retweet`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: currentUser.id })
       });
-  
       if (response.ok) {
         alert("Publication retweetée avec succès !");
-        fetchProfileData(); // Rafraîchir les données de profil
+        fetchProfileData(); // Actualise les données de profil
       } else {
         alert("Erreur lors du retweet de la publication.");
       }
@@ -179,8 +186,27 @@ const Profile = ({ currentUser }) => {
       console.error('[ERREUR] Erreur lors du retweet :', error);
     }
   };
-  
 
+  const handleLike = async (postId) => {
+    try {
+      const response = await fetch(`${apiUrl}/api/publications/${postId}/like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: currentUser.id })
+      });
+  
+      if (response.ok) {
+        const updatedLikes = await response.json();
+        setLikes((prev) => ({ ...prev, [postId]: updatedLikes.count }));
+      } else {
+        alert("Erreur lors du like.");
+      }
+    } catch (error) {
+      console.error('[ERREUR] Erreur lors du like :', error);
+    }
+  };
+  
+          
 
   const handleDeletePost = async (postId) => {
     try {
@@ -211,8 +237,9 @@ const Profile = ({ currentUser }) => {
   
       if (response.ok) {
         alert('Retweet supprimé avec succès!');
-        setRetweets((prevRetweets) => prevRetweets.filter((r) => r.id !== publicationId));
-
+        setRetweets((prevRetweets) =>
+          prevRetweets.filter((retweet) => retweet.id !== publicationId)
+        );
       } else {
         alert("Erreur lors de la suppression du retweet.");
       }
@@ -317,33 +344,39 @@ const Profile = ({ currentUser }) => {
     }
   }, [id]);
 
-// Chargement des données utilisateur et portefeuille
-useEffect(() => {
-  if (!currentUser) {
-    console.warn("[AVERTISSEMENT] Aucun utilisateur connecté.");
-    return;
-  }
 
-  console.log("[INFO] Chargement des données du profil...");
+  // Appelez ensuite les fonctions dans `useEffect` pour charger les données supplémentaires
+  useEffect(() => {
+    if (currentUser) {
+      // Récupérer les données de profil de l'utilisateur
+      fetchProfileData();
+
+      // Récupérer les données supplémentaires
+      fetchExtraProfileData();
+
+      // Récupérer les données du portefeuille
+      fetchWalletData();
+    }
+  }, [currentUser, fetchProfileData, fetchExtraProfileData, fetchWalletData]); // Cela appelle les fonctions quand `currentUser` change
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
   
-  Promise.all([
-    fetchProfileData(),
-    fetchExtraProfileData(),
-    fetchWalletData(),
-  ])
-    .then(() => console.log("[SUCCÈS] Toutes les données utilisateur ont été chargées."))
-    .catch((error) => console.error("[ERREUR] Problème lors du chargement des données utilisateur :", error));
-}, [currentUser, fetchProfileData, fetchExtraProfileData, fetchWalletData]);
-
-
-// Affichage conditionnel de BottomNav en fonction de l'onglet actif
-useEffect(() => {
-  if (activeTab === "retweets") {
-    setShowBottomNav(false); // Masque la barre de navigation
-  } else {
-    setShowBottomNav(true); // Affiche la barre de navigation
-  }
-}, [activeTab]);
+      if (currentScrollY > lastScrollY) {
+        setShowBottomNav(false); // L'utilisateur descend => on cache
+      } else {
+        setShowBottomNav(true); // L'utilisateur monte => on montre
+      }
+  
+      setLastScrollY(currentScrollY);
+    };
+  
+    window.addEventListener('scroll', handleScroll);
+  
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+  
 
   return (
     <div className="profile-container">
@@ -401,20 +434,6 @@ useEffect(() => {
           </div>
 
 
-          <div className="profile-tabs">
-  <button
-    className={`tab-button ${activeTab === 'publications' ? 'active' : ''}`}
-    onClick={() => setActiveTab('publications')}
-  >
-    Mes Publications
-  </button>
-  <button
-    className={`tab-button ${activeTab === 'retweets' ? 'active' : ''}`}
-    onClick={() => setActiveTab('retweets')}
-  >
-    Mes Retweets
-  </button>
-</div>
 
   
           <div className="profile-bio">
@@ -428,49 +447,8 @@ useEffect(() => {
             )}
           </div>
   
-          <div>
-            Données supplémentaires :
-            {extraData && typeof extraData === 'object' ? (
-              <ul>
-                {Object.entries(extraData).map(([key, value]) => (
-                  <li key={key}>
-                    <strong>{key} :</strong> {value}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              'Aucune donnée'
-            )}
-          </div>
-
-          <div>
-  <h3>Détails du Profil</h3>
-  {response && (
-    <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-      {JSON.stringify(response, null, 2)}
-    </pre>
-  )}
-</div>
-
-  
-          <div className="transaction-history">
-            <h3>Historique des Transactions</h3>
-            {transactions.length > 0 ? (
-              <ul>
-                {transactions.map((transaction) => (
-                  <li key={transaction.transactionId}>
-                    {transaction.type === 'earn' ? 'Gagné' : 'Dépensé'} : {transaction.amount} ONVM Coins le{' '}
-                    {new Date(transaction.date).toLocaleDateString()}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>Aucune transaction pour le moment.</p>
-            )}
-          </div>
-
-          <div className="wallet-section">
-  <FaWallet /> <span>Solde: {balance} ONVM Coins</span>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
+  <FaWallet size={60} color="#555" title="Portefeuille" />
 </div>
 
   
@@ -485,78 +463,7 @@ useEffect(() => {
             </div>
           )}
   
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <div key={post.id} className="profile-post">
-                {post.media ? (
-                  post.media.endsWith('.mp4') ? (
-                    <video src={`${apiUrl}${post.media}`} controls />
-                  ) : (
-                    <img src={`${apiUrl}${post.media}`} alt={post.content} />
-                  )
-                ) : (
-                  <p>{post.content}</p>
-                )}
-<button
-  className="delete-button"
-  onClick={() => handleDeleteRetweet(post.id)}
-  title="Supprimer ce retweet"
->
-  ✖
-</button>
-
-
-<button
-  className="delete-button"
-  onClick={() => handleDeletePost(post.id)}
-  title="Supprimer cette publication"
->
-  ✖
-</button>
-
-
-
-                <div className="post-actions">
-                  <button onClick={() => fetchComments(post.id)}>
-                    <FaComment /> {comments[post.id]?.length || 0} Commentaires
-                  </button>
-                  <button onClick={() => handleShare(post.id)}>
-                    <FaShare /> Partager
-                  </button>
-                  <button onClick={() => handleRetweet(post.id)}>
-                    <FaRetweet /> Retweeter
-                  </button>
-                </div>
   
-                {activeComments[post.id] && (
-                  <div className="comments-section">
-                    {comments[post.id]?.map((comment, index) => (
-                      <div key={index} className="comment">
-                        <img
-                          src={comment.profilePicture ? `${apiUrl}${comment.profilePicture}` : '/default-profile.png'}
-                          alt="Profil"
-                          className="profile-picture-comment"
-                        />
-                        <strong>{comment.username}</strong>
-                        <p>{comment.comment}</p>
-                      </div>
-                    ))}
-                    <div className="add-comment-section">
-                      <input
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Ajouter un commentaire..."
-                      />
-                      <button onClick={() => handleComment(post.id, newComment)}>Envoyer</button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          ) : (
-            <p>Aucune publication pour le moment.</p>
-          )}
   
           <div className="profile-grid">
             <div className="tabs">
@@ -578,22 +485,71 @@ useEffect(() => {
               <>
                 <h3>Mes publications</h3>
                 {posts.length > 0 ? (
-                  posts.map((post) => (
-                    <div key={post.id} className="profile-post">
-                      {post.media ? (
-                        post.media.endsWith('.mp4') ? (
-                          <video src={`${apiUrl}${post.media}`} controls />
-                        ) : (
-                          <img src={`${apiUrl}${post.media}`} alt={post.content} />
-                        )
-                      ) : (
-                        <p>{post.content}</p>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <p>Aucune publication pour le moment.</p>
-                )}
+  posts.map((post) => (
+    <div key={post.id} className="profile-post">
+      {post.media ? (
+        post.media.endsWith('.mp4') ? (
+          <video src={`${apiUrl}${post.media}`} controls />
+        ) : (
+          <img src={`${apiUrl}${post.media}`} alt={post.content} />
+        )
+      ) : (
+        <p>{post.content}</p>
+      )}
+
+      <button
+        className="delete-button"
+        onClick={() => handleDeletePost(post.id)}
+        title="Supprimer cette publication"
+      >
+        ✖
+      </button>
+
+      <div className="post-actions">
+        <button onClick={() => fetchComments(post.id)}>
+          <FaComment /> {comments[post.id]?.length || 0} Commentaires
+        </button>
+        <button onClick={() => handleShare(post.id)}>
+          <FaShare /> Partager
+        </button>
+        <button onClick={() => handleRetweet(post.id)}>
+          <FaRetweet /> Retweeter
+        </button>
+        <button onClick={() => handleLike(post.id)}>
+          ❤️ {likes[post.id] || 0}
+        </button>
+      </div>
+
+      {activeComments[post.id] && (
+        <div className="comments-section">
+          {comments[post.id]?.map((comment, index) => (
+            <div key={index} className="comment">
+              <img
+                src={comment.profilePicture ? `${apiUrl}${comment.profilePicture}` : '/default-profile.png'}
+                alt="Profil"
+                className="profile-picture-comment"
+              />
+              <strong>{comment.username}</strong>
+              <p>{comment.comment}</p>
+            </div>
+          ))}
+          <div className="add-comment-section">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Ajouter un commentaire..."
+            />
+            <button onClick={() => handleComment(post.id, newComment)}>Envoyer</button>
+          </div>
+        </div>
+      )}
+    </div>
+  ))
+) : (
+  <p>Aucune publication pour le moment.</p>
+)}
+
               </>
             )}
   
@@ -613,20 +569,22 @@ useEffect(() => {
           </button>
           <p>{retweet.content}</p>
 
+
           <div className="post-actions">
-            <button onClick={() => fetchComments(retweet.id)}>
-              <FaComment /> {comments[retweet.id]?.length || 0} Commentaires
-            </button>
-            <button onClick={() => handleShare(retweet.id)}>
-              <FaShare /> Partager
-            </button>
-            <button onClick={() => handleRetweet(retweet.id)}>
-              <FaRetweet /> {retweets.length} Retweets
-            </button>
-            <button>
-              ❤️ {retweet.likes || 0} Likes
-            </button>
-          </div>
+  <button onClick={() => fetchComments(retweet.id)}>
+    <FaComment /> {comments[retweet.id]?.length || 0} Commentaires
+  </button>
+  <button onClick={() => handleShare(retweet.id)}>
+    <FaShare /> Partager
+  </button>
+  <button onClick={() => handleRetweet(retweet.id)}>
+    <FaRetweet /> Retweeter
+  </button>
+  <button onClick={() => handleLike(retweet.id)}>
+    ❤️ {likes[retweet.id] || 0}
+  </button>
+</div>
+
         </div>
       ))
     ) : (
@@ -634,7 +592,6 @@ useEffect(() => {
     )}
   </div>
 )}
-
 
 {/* Fin de la condition activeTab === 'retweets' */}
 </div>
@@ -647,41 +604,13 @@ useEffect(() => {
 
 {/* Navigation en bas de page */}
 <div className={`bottom-nav ${showBottomNav ? 'visible' : 'hidden'}`}>
-
-  {/* Accueil */}
   <FaHome onClick={() => navigate('/')} title="Accueil" />
-
-  {/* Recherche */}
   <FaSearch onClick={() => navigate('/search')} title="Recherche" />
+  <FaPlus onClick={() => navigate('/publication')} title="Créer une publication" />
 
-  {/* Création de publication */}
-  <div className="create-post-section">
-    <FaPlus
-      onClick={() => setIsCreating((prev) => !prev)}
-      title="Créer une publication"
-      className="create-post-button"
-    />
-    {isCreating && (
-      <p className="creating-text">Création en cours...</p>
-    )}
-  </div>
-
-  {/* Notifications */}
   <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
-
-  {/* Profil */}
   <FaUser onClick={() => navigate(`/profile/${currentUser?.id}`)} title="Mon profil" />
-
 </div>
-
-{/* Affichage conditionnel de BottomNav */}
-{showBottomNav && <BottomNav />}
-
-{/* Bouton retour en haut (utile sur mobile) */}
-<button className="scroll-to-top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-  ⬆️
-</button>
-
 </div>
 );
 };

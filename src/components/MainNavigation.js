@@ -3,10 +3,6 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import './MainNavigation.css'; // Assurez-vous de créer ce fichier pour styliser
 
-const apiUrl = process.env.REACT_APP_API_URL;
-
-console.log("API URL utilisée :", apiUrl);
-
 const MainNavigation = () => {
   const navigate = useNavigate();
 

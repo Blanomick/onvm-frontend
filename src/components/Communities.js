@@ -5,9 +5,6 @@ import { useParams } from 'react-router-dom';
 
 
 
-const apiUrl = process.env.REACT_APP_API_URL;
-
-console.log("API URL utilisée :", apiUrl);
 
 
 

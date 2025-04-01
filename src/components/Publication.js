@@ -26,7 +26,9 @@ import { useNavigate } from 'react-router-dom';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-console.log("API URL utilisée :", apiUrl);
+
+
+
 
 
 const Publication = ({ user }) => {
@@ -45,9 +47,6 @@ const Publication = ({ user }) => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [showBottomNav, setShowBottomNav] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
-  
-
-
   
 
   const navigate = useNavigate();
@@ -143,7 +142,6 @@ const Publication = ({ user }) => {
   };
 
   const handleComment = async (publicationId) => {
-    console.log("Publication ID utilisé pour le commentaire :", publicationId); // Ajout du log
     const formData = new FormData();
 
     if (!commentContent && !audioBlob && !media) {
@@ -287,25 +285,13 @@ const closeShareModal = () => {
 };
 
   
-useEffect(() => {
-  console.log("🔹 Retweets chargés :", retweets);
-  console.log("🔹 Likes chargés :", likes);
-}, [retweets, likes]);
 
 
   
   
   return (
     <div className="publication-page">
-      {/* En-tête de la page */}
-      <div className="header">
-        <FaBars className="menu-icon" onClick={toggleMenu} />
-        <div className="logo">O</div>
-        <div className="header-icons">
-          <FaHome onClick={() => navigate('/')} title="Accueil" />
-          <FaUsers onClick={() => navigate('/create-community')} title="Créer une communauté" />
-        </div>
-      </div>
+     
       {/* Menu coulissant */}
       {showMenu && <MainNavigation onClose={toggleMenu} />}
   
@@ -394,19 +380,23 @@ useEffect(() => {
               {/* Actions (Retweet, Commentaire, Partage) */}
               <div className="publication-footer">
   <button onClick={() => handleRetweet(publication.id)}>
-    <FaRetweet /> {publication.retweetsCount || 0} Retweets
+  <FaRetweet /> {retweets[publication.id] || 0} Retweets
+
   </button>    
          
                 <button onClick={() => handleLike(publication.id)}>
-  <FaHeart /> {publication.likes || 0} J'aime
+  <FaHeart /> {likes[publication.id] || 0} J'aime
+
 </button>
 
                
 
+<button onClick={() => setSelectedPublication(
+  selectedPublication === publication.id ? null : publication.id
+)}>
+  <FaComment /> {publication.comments.length} Commentaires
+</button>
 
-                <button onClick={() => setSelectedPublication(publication.id)}>
-                  <FaComment /> {publication.comments.length} Commentaires
-                </button>
 
                <button onClick={() => handleSharePublication(publication.id)}>
   <FaShare /> Partager
@@ -536,7 +526,10 @@ useEffect(() => {
       <div className={`bottom-nav ${showBottomNav ? 'visible' : 'hidden'}`}>
         <FaHome onClick={() => navigate('/')} title="Accueil" />
         <FaSearch onClick={() => navigate('/search')} title="Recherche" />
-        <FaPlus onClick={() => setIsCreating(!isCreating)} title="Créer une publication" />
+        <FaPlus onClick={() => setIsCreating(true)} title="Créer une publication" />
+
+
+
         <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
         <FaUser onClick={() => navigate(`/profile/${user?.id}`)} title="Mon profil" />
       </div>

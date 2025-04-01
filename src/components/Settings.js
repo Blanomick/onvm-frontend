@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
 import './Settings.css';
 
-
-const apiUrl = process.env.REACT_APP_API_URL;
-
-console.log("API URL utilisée :", apiUrl);
-
 const Settings = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
