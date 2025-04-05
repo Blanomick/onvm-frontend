@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
 
+const apiUrl = process.env.REACT_APP_API_URL;
 
+// puis plus bas
+fetch(`${apiUrl}/api/admin/stats`)
 
 
 
