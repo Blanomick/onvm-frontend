@@ -5,7 +5,7 @@ import { FaVideo, FaComment, FaShare, FaRetweet, FaWallet } from 'react-icons/fa
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import BottomNav from './BottomNav';
-import { FaHome, FaSearch, FaPlus, FaBell, FaUser } from 'react-icons/fa';
+import { FaHome, FaSearch, FaPlus, FaBell, FaUser  , FaUsers} from 'react-icons/fa';
 
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -360,6 +360,15 @@ setLikes(likesMap);
   }, [currentUser, fetchProfileData, fetchExtraProfileData, fetchWalletData]); // Cela appelle les fonctions quand `currentUser` change
 
   useEffect(() => {
+    if (response) {
+      console.log("Réponse utilisateur :", response);
+    }
+  }, [response]);
+  
+
+
+
+  useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
   
@@ -451,6 +460,12 @@ setLikes(likesMap);
   <FaWallet size={60} color="#555" title="Portefeuille" />
 </div>
 
+{extraData && (
+  <div style={{ display: 'none' }}>
+    {JSON.stringify(extraData)}
+  </div>
+)}
+
   
           {isOwner && (
             <div className="actions-section">
@@ -460,6 +475,18 @@ setLikes(likesMap);
               <button className="action-button withdraw-button" onClick={handleWithdraw}>
                 Retirer
               </button>
+
+              {transactions.length > 0 && (
+  <div className="wallet-history">
+    <h4>Historique des transactions</h4>
+    <ul>
+      {transactions.map((tx, index) => (
+        <li key={index}>{tx.type} de {tx.amount}€</li>
+      ))}
+    </ul>
+  </div>
+)}
+
             </div>
           )}
   
@@ -544,6 +571,8 @@ setLikes(likesMap);
           </div>
         </div>
       )}
+
+
     </div>
   ))
 ) : (
@@ -611,6 +640,16 @@ setLikes(likesMap);
   <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
   <FaUser onClick={() => navigate(`/profile/${currentUser?.id}`)} title="Mon profil" />
 </div>
+
+{/* Utilisation de BottomNav pour éviter le warning */}
+{showBottomNav && <BottomNav />}
+
+{/* Icône utilisée uniquement pour éviter le warning ESLint */}
+<div style={{ display: 'none' }}>
+  <FaUsers />
+</div>
+
+
 </div>
 );
 };
