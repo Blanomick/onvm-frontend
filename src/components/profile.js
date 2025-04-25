@@ -36,6 +36,9 @@ const Profile = ({ currentUser }) => {
   const [showBottomNav, setShowBottomNav] = useState(true); // Par défaut, la barre est visible
   const [lastScrollY, setLastScrollY] = useState(0);
   const [likes, setLikes] = useState({});
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const fileInputRef = React.useRef(null);
+  const [animateFollower, setAnimateFollower] = useState(false);
 
 
 
@@ -74,10 +77,18 @@ const Profile = ({ currentUser }) => {
         isFollowingResponse.json()
       ]);
 
-      setFollowerCount(followerData.totalFollowers || 0);
+     
+      const newCount = followerData.totalFollowers || 0;
+      if (newCount !== followerCount) {
+        setAnimateFollower(true);
+        setTimeout(() => setAnimateFollower(false), 500);
+      }
+      setFollowerCount(newCount);
+      
       setPosts(postsData);
       setRetweets(retweetsData);
       setIsFollowing(isFollowingData.isFollowing);
+      
 
       setFollowerCount(followerData.totalFollowers || 0);
 setPosts(postsData);
@@ -94,7 +105,7 @@ setLikes(likesMap);
     } catch (error) {
       console.error('[ERREUR] Erreur lors de la récupération du profil:', error);
     }
-  }, [currentUser, id]); // Dépendances pour stabiliser la fonction
+  }, [currentUser, id, followerCount]); // Dépendances pour stabiliser la fonction
 
 
   // Fonction `fetchWalletData` enveloppée avec `useCallback`
@@ -250,6 +261,7 @@ setLikes(likesMap);
   
 
   // Handle follow/unfollow action
+
   const handleFollow = async () => {
     try {
       const url = isFollowing ? '/unfollow' : '/follow';
@@ -258,18 +270,23 @@ setLikes(likesMap);
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ followerId: currentUser.id, followingId: profileUser.id })
       });
-
+  
       if (response.ok) {
-        setFollowerCount((prevCount) => (isFollowing ? prevCount - 1 : prevCount + 1));
+        // 🔁 Recharge immédiatement le nombre de followers depuis le serveur
+        const followersRes = await fetch(`${apiUrl}/api/users/${profileUser.id}/followers`);
+        const followersData = await followersRes.json();
+        setFollowerCount(followersData.totalFollowers || 0); // ✅ mise à jour réelle
+  
         setIsFollowing(!isFollowing);
-        console.log("Action de suivi réussie :", await response.json()); // Affiche les détails de la réponse
       } else {
-        console.error("Erreur lors de l'action de suivi :", await response.json());
+        const err = await response.json();
+        console.error("[ERREUR] Suivi échoué :", err.message);
       }
     } catch (error) {
-      console.error('[ERREUR] Erreur lors du suivi:', error);
+      console.error('[ERREUR] Erreur lors de l’action de suivi/désabonnement :', error);
     }
   };
+  
 
 
   // Save biography
@@ -289,6 +306,25 @@ setLikes(likesMap);
       console.error('[ERREUR] Erreur lors de l\'enregistrement de la biographie:', error);
     }
   };
+
+  const handleProfilePictureClick = () => {
+    setShowProfileMenu(!showProfileMenu);
+  };
+  
+  const handleViewProfilePicture = () => {
+    if (profileUser?.profilePicture) {
+      window.open(`${apiUrl}${profileUser.profilePicture}`, '_blank');
+    } else {
+      alert("Aucune photo de profil.");
+    }
+  };
+  
+  const handleOpenFilePicker = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
 
   // Handle comments for a post
   const handleComment = async (postId, comment) => {
@@ -392,16 +428,19 @@ setLikes(likesMap);
       {profileUser ? (
         <>
                <div className="profile-header">
-  <img
-    src={
-      profileUser.profilePicture
-    
-        ? `${apiUrl}${profileUser.profilePicture}`
-        : '/images/default-profile.png' // Chemin de l'image par défaut
-    }
-    alt="Profile"
-    className="profile-picture"
-  />
+  
+               <img
+  src={
+    profileUser.profilePicture
+      ? `${apiUrl}${profileUser.profilePicture}`
+      : '/images/default-profile.png'
+  }
+  alt="Profile"
+  className="profile-picture"
+  onClick={isOwner ? handleProfilePictureClick : undefined}
+/>
+
+
 
 
             <div className="profile-info">
@@ -409,14 +448,35 @@ setLikes(likesMap);
   
               {isOwner && <button>Modifier le profil</button>}
   
-              <p>
-                <strong>{followerCount}</strong> abonnés
-              </p>
-  
-              {isOwner ? (
-                <>
-                  <input type="file" onChange={handleFileChange} />
-                  {newProfileImage && (
+              <p className={`follower-count ${animateFollower ? 'pop' : ''}`}>
+  <strong>{followerCount}</strong> {followerCount === 1 ? 'abonné' : 'abonnés'}
+</p>
+
+ 
+
+{isOwner ? (
+  <>
+    
+    <div className="profile-picture-container" onClick={handleProfilePictureClick}>
+  <input
+    type="file"
+    ref={fileInputRef}
+    style={{ display: 'none' }}
+    accept="image/*"
+    onChange={handleFileChange}
+  />
+  {showProfileMenu && (
+    <div className="profile-picture-menu">
+      <button onClick={handleViewProfilePicture}>Voir la photo</button>
+      <button onClick={handleOpenFilePicker}>Changer la photo</button>
+    </div>
+  )}
+</div>
+
+
+    {newProfileImage && (
+
+             
                     <div>
                       <Cropper
                         src={newProfileImage}
@@ -631,6 +691,8 @@ setLikes(likesMap);
   <p>Chargement...</p>
 )}
 
+
+ 
 {/* Navigation en bas de page */}
 <div className={`bottom-nav ${showBottomNav ? 'visible' : 'hidden'}`}>
   <FaHome onClick={() => navigate('/')} title="Accueil" />
@@ -640,6 +702,7 @@ setLikes(likesMap);
   <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
   <FaUser onClick={() => navigate(`/profile/${currentUser?.id}`)} title="Mon profil" />
 </div>
+    
 
 {/* Utilisation de BottomNav pour éviter le warning */}
 {showBottomNav && <BottomNav />}

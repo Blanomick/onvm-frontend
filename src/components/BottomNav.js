@@ -19,7 +19,8 @@ const BottomNav = () => {
       </button>
 
       {/* Bouton pour ajouter une nouvelle publication */}
-      <button onClick={() => navigate('/publication/new')} aria-label="Nouvelle publication">
+      <button onClick={() => navigate('/publication')} aria-label="Nouvelle publication">
+
         <FaPlus />
       </button>
 

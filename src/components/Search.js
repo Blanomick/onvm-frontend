@@ -18,21 +18,27 @@ const Search = ({ user }) => {
   const [results, setResults] = useState([]);
   const navigate = useNavigate();
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
+ 
+  let debounceTimeout;
 
-    if (!user || !user.id) {
-      console.error('Utilisateur non connecté ou ID non défini.');
-      return;
-    }
-
-    try {
-      const response = await axios.get(`${apiUrl}/api/search?q=${searchTerm}&userId=${user.id}`);
-      setResults(response.data);
-    } catch (err) {
-      console.error('[ERREUR] Erreur lors de la recherche des utilisateurs:', err);
-    }
+  const handleLiveSearch = (value) => {
+    if (debounceTimeout) clearTimeout(debounceTimeout);
+  
+    debounceTimeout = setTimeout(async () => {
+      if (!user || !user.id || !value.trim()) return;
+  
+      try {
+        const response = await axios.get(`${apiUrl}/api/search?q=${value}&userId=${user.id}`);
+        setResults(response.data);
+      } catch (err) {
+        console.error('[ERREUR] Erreur lors de la recherche en direct :', err);
+      }
+    }, 300); // Délai de 300ms
   };
+  
+
+
+
 
   const handleFollow = async (userId) => {
     try {
@@ -64,15 +70,19 @@ const Search = ({ user }) => {
 
       {/* Formulaire de recherche */}
       <h2>Recherche d'utilisateurs</h2>
-      <form onSubmit={handleSearch} className="search-form">
-        <input
-          type="text"
-          placeholder="Rechercher un utilisateur..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        <button type="submit">Rechercher</button>
-      </form>
+      <form className="search-form">
+  <input
+    type="text"
+    placeholder="Rechercher un utilisateur..."
+    value={searchTerm}
+    
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      handleLiveSearch(e.target.value);
+    }}
+  />
+</form>
+
 
       {/* Résultats de recherche */}
       <div className="search-results">
@@ -84,15 +94,44 @@ const Search = ({ user }) => {
               onClick={() => handleViewProfile(result.id)}
               style={{ cursor: 'pointer' }}
             >
-              <img
-                src={
-                  result.profilePicture
-                    ? `${apiUrl}${result.profilePicture}`
-                    : '/default-profile.png'
-                }
-                alt={`${result.username || 'Profil utilisateur'}`}
-                className="profile-picture"
-              />
+                
+                {results.map((result) => {
+  const imageUrl = result.profilePicture
+    ? `${apiUrl}${result.profilePicture}`
+    : '/default-profile.png';
+
+  console.log("Image URL:", imageUrl); // 👈 LOG pour vérifier le chemin
+
+  return (
+    <div
+      key={result.id}
+      className="search-result"
+      onClick={() => handleViewProfile(result.id)}
+      style={{ cursor: 'pointer' }}
+    >
+      <img
+        src={imageUrl}
+        alt={`${result.username || 'Profil utilisateur'}`}
+        className="profile-picture"
+      />
+      <div className="user-info">
+        <p>{result.username}</p>
+        <button
+          className="follow-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleFollow(result.id);
+          }}
+        >
+          Suivre
+        </button>
+      </div>
+    </div>
+  );
+})}
+
+
+
               <div className="user-info">
                 <p>{result.username}</p>
                 <button

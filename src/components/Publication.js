@@ -48,8 +48,9 @@ const Publication = ({ user }) => {
   const [audioBlob, setAudioBlob] = useState(null);
   const [showBottomNav, setShowBottomNav] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
-  
 
+
+ 
   const navigate = useNavigate();
   const mediaRecorderRef = useRef(null);
   const lastScrollTop = useRef(0);
@@ -127,7 +128,18 @@ const Publication = ({ user }) => {
     const formData = new FormData();
     formData.append('userId', user.id);
     formData.append('content', content);
-    if (media) formData.append('media', media);
+    if (media) {
+      const type = media.type;
+      if (type.startsWith('image/')) {
+        formData.append('mediaType', 'image');
+      } else if (type.startsWith('video/')) {
+        formData.append('mediaType', 'video');
+      } else if (type.startsWith('audio/')) {
+        formData.append('mediaType', 'audio');
+      }
+      formData.append('media', media);
+    }
+    
 
     try {
       await axios.post(`${apiUrl}/api/publications`, formData, {
@@ -304,11 +316,15 @@ const closeShareModal = () => {
             onChange={(e) => setContent(e.target.value)}
             placeholder="Exprimez-vous..."
           ></textarea>
-          <input
-            type="file"
-            onChange={(e) => setMedia(e.target.files[0])}
-            accept="image/*,video/*"
-          />
+         
+
+         <input
+  type="file"
+  onChange={(e) => setMedia(e.target.files[0])}
+  accept="image/*,video/*,audio/*"
+/>
+
+
           <button type="submit">Publier</button>
         </form>
       )}
@@ -369,14 +385,17 @@ const closeShareModal = () => {
   
               {/* Médias associés à la publication */}
               {publication.media && (
-                <div className="media">
-                  {publication.media.endsWith('.mp4') ? (
-                    <video src={`${apiUrl}${publication.media}`} controls />
-                  ) : (
-                    <img src={`${apiUrl}${publication.media}`} alt="Publication media" />
-                  )}
-                </div>
-              )}
+  <div className="media">
+    {publication.media.endsWith('.mp4') || publication.media.endsWith('.webm') ? (
+      <video src={`${apiUrl}${publication.media}`} controls />
+    ) : publication.media.endsWith('.mp3') || publication.media.endsWith('.ogg') ? (
+      <audio src={`${apiUrl}${publication.media}`} controls />
+    ) : (
+      <img src={`${apiUrl}${publication.media}`} alt="Publication media" />
+    )}
+  </div>
+)}
+
   
               {/* Actions (Retweet, Commentaire, Partage) */}
               <div className="publication-footer">
