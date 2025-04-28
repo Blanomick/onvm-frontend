@@ -395,15 +395,18 @@ const closeShareModal = () => {
   
               {/* Médias associés à la publication */}
               {publication.media && (
-  <div className="media">
-    {publication.media.endsWith('.mp4') || publication.media.endsWith('.webm') ? (
-      <video src={`${apiUrl}${publication.media}`} controls />
-    ) : publication.media.endsWith('.mp3') || publication.media.endsWith('.ogg') ? (
-      <audio src={`${apiUrl}${publication.media}`} controls />
-    ) : (
-      <img src={`${apiUrl}${publication.media}`} alt="Publication media" />
-    )}
-  </div>
+ 
+ <div className="media">
+ {publication.media.endsWith('.mp4') || publication.media.endsWith('.webm') ? (
+   <video src={publication.media} controls />
+ ) : publication.media.endsWith('.mp3') || publication.media.endsWith('.ogg') ? (
+   <audio src={publication.media} controls />
+ ) : (
+   <img src={publication.media} alt="Publication media" />
+ )}
+</div>
+
+
 )}
 
   
@@ -455,17 +458,17 @@ const closeShareModal = () => {
                       </div>
                       <p>{comment.comment}</p>
                       {comment.media && (
-                        <div className="comment-media">
-                          {comment.media.endsWith('.mp4') ? (
-                            <video src={`${apiUrl}${comment.media}`} controls />
-                          ) : comment.media.endsWith('.ogg') ||
-                            comment.media.endsWith('.mp3') ? (
-                            <audio src={`${apiUrl}${comment.media}`} controls />
-                          ) : (
-                            <img src={`${apiUrl}${comment.media}`} alt="Comment media" />
-                          )}
-                        </div>
-                      )}
+  <div className="comment-media">
+    {comment.media.endsWith('.mp4') || comment.media.endsWith('.webm') ? (
+      <video src={comment.media} controls />
+    ) : comment.media.endsWith('.ogg') || comment.media.endsWith('.mp3') ? (
+      <audio src={comment.media} controls />
+    ) : (
+      <img src={comment.media} alt="Comment media" />
+    )}
+  </div>
+)}
+
                     </div>
                   ))}
 
