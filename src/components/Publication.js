@@ -118,29 +118,32 @@ const Publication = ({ user }) => {
     }
   };
 
+
+
+
+
+
   const handlePublication = async (e) => {
     e.preventDefault();
-    if (!user) {
-      alert("Erreur : vous devez être connecté pour publier.");
+  
+    if (!user?.id) {
+      alert("Erreur : utilisateur non connecté.");
       return;
     }
-
+  
+    if (!content && !media) {
+      alert("Erreur : veuillez écrire quelque chose ou ajouter un fichier.");
+      return;
+    }
+  
     const formData = new FormData();
     formData.append('userId', user.id);
     formData.append('content', content);
+  
     if (media) {
-      const type = media.type;
-      if (type.startsWith('image/')) {
-        formData.append('mediaType', 'image');
-      } else if (type.startsWith('video/')) {
-        formData.append('mediaType', 'video');
-      } else if (type.startsWith('audio/')) {
-        formData.append('mediaType', 'audio');
-      }
       formData.append('media', media);
     }
-    
-
+  
     try {
       await axios.post(`${apiUrl}/api/publications`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -153,6 +156,13 @@ const Publication = ({ user }) => {
       console.error('[ERREUR] Erreur lors de la publication:', err);
     }
   };
+  
+
+
+
+
+
+
 
   const handleComment = async (publicationId) => {
     const formData = new FormData();
