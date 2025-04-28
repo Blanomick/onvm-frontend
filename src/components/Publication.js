@@ -122,7 +122,6 @@ const Publication = ({ user }) => {
 
 
 
-
   const handlePublication = async (e) => {
     e.preventDefault();
   
@@ -154,6 +153,11 @@ const Publication = ({ user }) => {
       fetchPublications();
     } catch (err) {
       console.error('[ERREUR] Erreur lors de la publication:', err);
+      if (err.response && err.response.data && err.response.data.message) {
+        alert(`Erreur de publication : ${err.response.data.message}`);
+      } else {
+        alert("Une erreur est survenue pendant la publication. Veuillez réessayer.");
+      }
     }
   };
   
