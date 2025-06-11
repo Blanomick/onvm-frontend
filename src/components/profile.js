@@ -576,9 +576,11 @@ setLikes(likesMap);
     <div key={post.id} className="profile-post">
       {post.media ? (
         post.media.endsWith('.mp4') ? (
-          <video src={`${apiUrl}${post.media}`} controls />
+          <video src={`${apiUrl}${post.media.replace(/\\/g, '/')}`} controls />
+
         ) : (
-          <img src={`${apiUrl}${post.media}`} alt={post.content} />
+          <img src={`${apiUrl}${post.media.replace(/\\/g, '/')}`} alt={post.content} />
+
         )
       ) : (
         <p>{post.content}</p>

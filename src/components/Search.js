@@ -59,14 +59,7 @@ const Search = ({ user }) => {
   return (
     <div className="search-page">
       {/* En-tête */}
-      <div className="header">
-        <div className="logo">Logo</div>
-        <div className="header-icons">
-          <FaSearch onClick={() => navigate('/search')} title="Rechercher" />
-          <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
-          <FaUserCircle onClick={() => navigate('/profile')} title="Profil" />
-        </div>
-      </div>
+      
 
       {/* Formulaire de recherche */}
       <h2>Recherche d'utilisateurs</h2>
@@ -95,55 +88,45 @@ const Search = ({ user }) => {
               style={{ cursor: 'pointer' }}
             >
                 
-                {results.map((result) => {
-  const imageUrl = result.profilePicture
-    ? `${apiUrl}${result.profilePicture}`
-    : '/default-profile.png';
+                {results.length > 0 ? (
+  results.map((result) => {
+    const imageUrl = result.profilePicture
+      ? `${apiUrl}${result.profilePicture}`
+      : '/default-profile.png';
 
-  console.log("Image URL:", imageUrl); // 👈 LOG pour vérifier le chemin
-
-  return (
-    <div
-      key={result.id}
-      className="search-result"
-      onClick={() => handleViewProfile(result.id)}
-      style={{ cursor: 'pointer' }}
-    >
-      <img
-        src={imageUrl}
-        alt={`${result.username || 'Profil utilisateur'}`}
-        className="profile-picture"
-      />
-      <div className="user-info">
-        <p>{result.username}</p>
-        <button
-          className="follow-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleFollow(result.id);
-          }}
-        >
-          Suivre
-        </button>
+    return (
+      <div
+        key={result.id}
+        className="search-result"
+        onClick={() => handleViewProfile(result.id)}
+        style={{ cursor: 'pointer' }}
+      >
+        <img
+          src={imageUrl}
+          alt={result.username}
+          className="profile-picture"
+        />
+        <div className="user-info">
+          <p>{result.username}</p>
+          <button
+            className="follow-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFollow(result.id);
+            }}
+          >
+            Suivre
+          </button>
+        </div>
       </div>
-    </div>
-  );
-})}
+    );
+  })
+) : (
+  <p>Aucun utilisateur trouvé.</p>
+)}
 
 
 
-              <div className="user-info">
-                <p>{result.username}</p>
-                <button
-                  className="follow-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFollow(result.id);
-                  }}
-                >
-                  Suivre
-                </button>
-              </div>
             </div>
           ))
         ) : (

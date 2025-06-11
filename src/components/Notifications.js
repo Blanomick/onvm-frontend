@@ -15,14 +15,7 @@ const Notifications = ({ user }) => {
   return (
     <div className="notifications-page">
       {/* Header with navigation icons */}
-      <div className="header">
-        <div className="logo">Logo</div>
-        <div className="header-icons">
-          <FaSearch onClick={() => navigate('/search')} title="Recherche" />
-          <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
-          <FaUserCircle onClick={() => navigate(`/profile/${user.id}`)} title="Profil" />
-        </div>
-      </div>
+      
 
       {/* Notifications content */}
       <h2>Notifications</h2>

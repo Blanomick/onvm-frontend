@@ -12,6 +12,7 @@ import Communities from './components/Communities';
 import CreateCommunity from './components/CreateCommunity';
 import MainNavigation from './components/MainNavigation';
 import Live from './components/Live';
+import Banner from './components/Banner';
 
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
@@ -28,6 +29,8 @@ const App = () => {
   return (
     <Router>
       <div>
+        <Banner />
+
         <Routes>
           {/* Route par défaut vers Auth si l'utilisateur n'est pas connecté */}
           <Route

@@ -194,16 +194,21 @@ const Publication = ({ user }) => {
     }
   };
 
-  const handleDeletePublication = async (publicationId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer cette publication ?')) {
-      try {
-        await axios.delete(`${apiUrl}/api/publications/${publicationId}`);
-        setPublications((prev) => prev.filter((pub) => pub.id !== publicationId));
-      } catch (err) {
-        console.error('[ERREUR] Erreur lors de la suppression de la publication:', err);
-      }
+const handleDeletePublication = async (publicationId) => {
+  if (window.confirm('Êtes-vous sûr de vouloir supprimer cette publication ?')) {
+    try {
+      await axios.delete(`${apiUrl}/api/publications/${publicationId}`, {
+        data: { userId: user.id }, // ✅ Ajout de userId
+      });
+      setPublications((prev) => prev.filter((pub) => pub.id !== publicationId));
+    } catch (err) {
+      console.error('[ERREUR] Erreur lors de la suppression de la publication:', err);
     }
-  };
+  }
+};
+
+
+
 
   const handleLike = async (publicationId) => {
     try {
@@ -282,28 +287,34 @@ const handleSharePublication = (publicationId) => {
     });
 };
 
-// Gestion de la barre de navigation en bas (disparition lors du scroll vers le bas)
-useEffect(() => {
+  useEffect(() => {
+  let timeout;
+
   const handleScroll = () => {
     const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
 
+    // Défilement vers le bas -> cache avec un délai
     if (currentScroll > lastScrollTop.current) {
-      setShowBottomNav(false); // Cache le BottomNav lors du défilement vers le bas
+      timeout = setTimeout(() => {
+        setShowBottomNav(false);
+      }, 150);
     } else {
-      setShowBottomNav(true); // Affiche le BottomNav lors du défilement vers le haut
+      // Défilement vers le haut -> montre immédiatement
+      setShowBottomNav(true);
+      clearTimeout(timeout);
     }
 
-    lastScrollTop.current = currentScroll <= 0 ? 0 : currentScroll; // Mise à jour du dernier positionnement du scroll
+    lastScrollTop.current = currentScroll <= 0 ? 0 : currentScroll;
   };
 
-  // Ajout d'un écouteur d'événement pour surveiller le défilement
   window.addEventListener('scroll', handleScroll);
 
-  // Nettoyage de l'écouteur lors du démontage du composant
   return () => {
+    clearTimeout(timeout);
     window.removeEventListener('scroll', handleScroll);
   };
 }, []);
+
 
 // Fonction de nettoyage de la modale de partage
 const closeShareModal = () => {
