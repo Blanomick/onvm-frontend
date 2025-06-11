@@ -5,3 +5,7 @@ build/
 # Ignorer les variables locales
 .env.local
 .env.*.local
+
+
+# Fichiers APK lourds (à ignorer pour GitHub)
+*.apk
