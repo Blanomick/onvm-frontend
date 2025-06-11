@@ -1,6 +1,8 @@
 node_modules/
 .cache/
 build/
+public/apk/
+
 
 # Ignorer les variables locales
 .env.local

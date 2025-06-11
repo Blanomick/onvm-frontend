@@ -125,14 +125,15 @@
 
 .publication-footer {
   display: flex;
-  justify-content: space-around;
-  align-items: center;
+  flex-wrap: wrap; /* Permet de passer à la ligne si nécessaire */
+  justify-content: space-between;
+  gap: 8px;
   margin-top: 10px;
-  gap: 5px;
-  flex-wrap: nowrap;
 }
 
 .publication-footer button {
+  flex: 1 1 calc(50% - 10px); /* Deux boutons max par ligne */
+  min-width: 110px;
   background: #000000;
   color: #ffffff;
   border: none;
@@ -142,6 +143,7 @@
   font-size: 12px;
   white-space: nowrap;
 }
+
 
 .publication-footer button:hover {
   background-color: #333333;
