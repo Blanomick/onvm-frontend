@@ -6,6 +6,7 @@ import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import BottomNav from './BottomNav';
 import { FaHome, FaSearch, FaPlus, FaBell, FaUser  , FaUsers} from 'react-icons/fa';
+import axios from 'axios'; // ✅ nécessaire pour handleComment
 
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -39,6 +40,9 @@ const Profile = ({ currentUser }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const fileInputRef = React.useRef(null);
   const [animateFollower, setAnimateFollower] = useState(false);
+const [commentContent, setCommentContent] = useState('');
+const [audioBlob, setAudioBlob] = useState(null);
+const [media, setMedia] = useState(null);
 
 
 
@@ -335,7 +339,8 @@ const handleComment = async (publicationId) => {
     return;
   }
 
-  formData.append('userId', user.id);
+  formData.append('userId', currentUser.id);
+
   if (commentContent) formData.append('comment', commentContent);
 
   // ✅ Toujours utiliser "media" comme champ pour le fichier, peu importe le type
@@ -352,7 +357,8 @@ const handleComment = async (publicationId) => {
     setCommentContent('');
     setAudioBlob(null);
     setMedia(null);
-    fetchPublications();
+    fetchProfileData();
+
   } catch (err) {
     console.error("[ERREUR] Erreur lors de l'ajout du commentaire:", err);
   }
