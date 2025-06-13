@@ -424,68 +424,66 @@ const closeShareModal = () => {
 
 )}
 
-  
-              {/* Actions (Retweet, Commentaire, Partage) */}
-              <div className="publication-footer">
-  <button onClick={() => handleRetweet(publication.id)}>
-  <FaRetweet /> {retweets[publication.id] || 0} Retweets
+  <div className="publication-footer">
+  <button className="footer-button" onClick={() => handleRetweet(publication.id)}>
+    <FaRetweet />
+    <span>{retweets[publication.id] || 0}</span>
+  </button>
 
-  </button>    
-         
-                <button onClick={() => handleLike(publication.id)}>
-  <FaHeart /> {likes[publication.id] || 0} J'aime
+  <button className="footer-button" onClick={() => handleLike(publication.id)}>
+    <FaHeart />
+    <span>{likes[publication.id] || 0}</span>
+  </button>
 
-</button>
+  <button className="footer-button" onClick={() => setSelectedPublication(
+    selectedPublication === publication.id ? null : publication.id
+  )}>
+    <FaComment />
+    <span>{publication.comments.length}</span>
+  </button>
 
-               
+  <button className="footer-button" onClick={() => handleSharePublication(publication.id)}>
+    <FaShare />
+  </button>
+</div>
 
-<button onClick={() => setSelectedPublication(
-  selectedPublication === publication.id ? null : publication.id
-)}>
-  <FaComment /> {publication.comments.length} Commentaires
-</button>
-
-
-               <button onClick={() => handleSharePublication(publication.id)}>
-  <FaShare /> Partager
-</button>
-
-              
-
-              </div>
   
               {/* Section des commentaires */}
               {selectedPublication === publication.id && (
                 <div className="comments-section">
-                  {publication.comments.map((comment) => (
-                    <div key={comment.id} className="comment">
-                      <div className="comment-header">
-                        <img
-                          src={
-                            comment.profilePicture
-                              ? `${apiUrl}${comment.profilePicture}`
-                              : '/default-profile.png'
-                          }
-                          alt="Profil"
-                          className="comment-profile-picture"
-                        />
-                        <span className="comment-username">{comment.username}</span>
-                      </div>
-                      <p>{comment.comment}</p>
-                      {comment.media && (
-  <div className="comment-media">
-    {comment.media.endsWith('.mp4') || comment.media.endsWith('.webm') ? (
-      <video src={comment.media} controls />
-    ) : comment.media.endsWith('.ogg') || comment.media.endsWith('.mp3') ? (
-      <audio src={comment.media} controls />
-    ) : (
-      <img src={comment.media} alt="Comment media" />
-    )}
-  </div>
-)}
+                {publication.comments.map((comment) => (
+  <div key={comment.id} className="comment">
+    <img
+      src={
+        comment.profilePicture
+          ? `${apiUrl}${comment.profilePicture}`
+          : '/default-profile.png'
+      }
+      alt="Profil"
+      className="comment-profile-picture"
+    />
 
-                    </div>
-                  ))}
+    <div className="comment-content">
+      <span className="comment-username">{comment.username}</span>
+      <p className="comment-text">{comment.comment}</p>
+
+      {comment.media && (
+        <div className="comment-media">
+          {comment.media.endsWith('.mp4') || comment.media.endsWith('.webm') ? (
+            <video src={comment.media} controls />
+          ) : comment.media.endsWith('.ogg') || comment.media.endsWith('.mp3') ? (
+            <audio src={comment.media} controls />
+          ) : (
+            <img src={comment.media} alt="Comment media" />
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+))}
+
+
+
 
 <div className="add-comment">
   {/* Zone de texte pour le commentaire */}

@@ -17,6 +17,16 @@ import Banner from './components/Banner';
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
   const [isAdmin, setIsAdmin] = useState(false); // Indique si l'utilisateur est administrateur
+const [showBanner, setShowBanner] = useState(true);
+
+React.useEffect(() => {
+  const timer = setTimeout(() => {
+    setShowBanner(false);
+  }, 5000); // 5 secondes
+
+  return () => clearTimeout(timer);
+}, []);
+
 
   // Fonction pour gérer la connexion de l'utilisateur et administrateur
   const handleLogin = (userData, isAdminFlag = false) => {
@@ -29,7 +39,8 @@ const App = () => {
   return (
     <Router>
       <div>
-        <Banner />
+        {showBanner && <Banner />}
+
 
         <Routes>
           {/* Route par défaut vers Auth si l'utilisateur n'est pas connecté */}

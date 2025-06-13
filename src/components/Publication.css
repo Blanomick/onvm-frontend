@@ -121,33 +121,38 @@
 }
 
 /* Pied de la publication */
-
-
 .publication-footer {
   display: flex;
-  flex-wrap: wrap; /* Permet de passer à la ligne si nécessaire */
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 10px;
+  justify-content: space-around;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #eee;
+  flex-wrap: nowrap;
 }
 
-.publication-footer button {
-  flex: 1 1 calc(50% - 10px); /* Deux boutons max par ligne */
-  min-width: 110px;
-  background: #000000;
-  color: #ffffff;
+.footer-button {
+  flex: 1;
+  background-color: transparent;
   border: none;
-  padding: 6px 10px;
-  border-radius: 5px;
+  text-align: center;
+  font-size: 14px;
+  color: #333;
   cursor: pointer;
-  font-size: 12px;
-  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 0;
+  border-radius: 6px;
+  transition: background-color 0.2s ease-in-out;
 }
 
-
-.publication-footer button:hover {
-  background-color: #333333;
+.footer-button:hover {
+  background-color: #f0f0f0;
 }
+
 
 
 
@@ -167,34 +172,49 @@
 
 /* Commentaire */
 .comment {
-  margin-bottom: 15px;
-}
-
-.comment-header {
   display: flex;
-  align-items: center;
-  margin-bottom: 5px;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
 }
 
 .comment-profile-picture {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 8px;
+}
+
+.comment-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .comment-username {
   font-weight: bold;
-  color: #000000;
+  font-size: 14px;
+  margin-bottom: 4px;
+  color: #111;
+}
+
+.comment-text {
+  font-size: 14px;
+  margin: 0;
+  color: #333;
+}
+
+.comment-media {
+  margin-top: 8px;
 }
 
 .comment-media img,
 .comment-media video,
 .comment-media audio {
   max-width: 100%;
-  border-radius: 8px;
-  margin-top: 5px;
+  border-radius: 10px;
 }
 
 /* Ajouter un commentaire */

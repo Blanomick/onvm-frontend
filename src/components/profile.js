@@ -327,22 +327,38 @@ setLikes(likesMap);
   
 
   // Handle comments for a post
-  const handleComment = async (postId, comment) => {
-    if (!comment.trim()) {
-      alert("Le commentaire ne peut pas être vide.");
-      return;
-    }
-    try {
-      await fetch(`${apiUrl}/api/publications/${postId}/comment`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id, comment })
-      });
-      fetchProfileData(); // Refresh profile data after adding comment
-    } catch (error) {
-      console.error('[ERREUR] Erreur lors du commentaire:', error);
-    }
-  };
+const handleComment = async (publicationId) => {
+  const formData = new FormData();
+
+  if (!commentContent && !audioBlob && !media) {
+    alert("Veuillez ajouter du texte, une image, une vidéo ou un fichier audio.");
+    return;
+  }
+
+  formData.append('userId', user.id);
+  if (commentContent) formData.append('comment', commentContent);
+
+  // ✅ Toujours utiliser "media" comme champ pour le fichier, peu importe le type
+  if (audioBlob) {
+    formData.append('media', audioBlob, 'comment_audio.ogg');
+  } else if (media) {
+    formData.append('media', media);
+  }
+
+  try {
+    await axios.post(`${apiUrl}/api/publications/${publicationId}/comment`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    setCommentContent('');
+    setAudioBlob(null);
+    setMedia(null);
+    fetchPublications();
+  } catch (err) {
+    console.error("[ERREUR] Erreur lors de l'ajout du commentaire:", err);
+  }
+};
+
+
 
   // Share a post
   const handleShare = (postId) => {
@@ -647,40 +663,93 @@ setLikes(likesMap);
   {activeTab === 'retweets' && (
   <div className="retweets-section">
     <h3>Mes retweets</h3>
-    {retweets.length > 0 ? (
-      retweets.map((retweet) => (
-        <div key={retweet.id} className="profile-post">
-          {/* Bouton de suppression */}
-          <button
-            className="delete-button"
-            onClick={() => handleDeleteRetweet(retweet.id)}
-            title="Supprimer ce retweet"
-          >
-            ✖
-          </button>
-          <p>{retweet.content}</p>
+   
+{retweets.length > 0 ? (
+  retweets.map((retweet) => (
+    <div key={retweet.id} className="profile-post">
 
+      {/* Auteur de la publication originale */}
+      <div className="post-header">
+        <img
+          src={
+            retweet.profilePicture
+              ? `${apiUrl}${retweet.profilePicture}`
+              : '/images/default-profile.png'
+          }
+          alt="Profil"
+          className="profile-picture-comment"
+        />
+        <strong>{retweet.username}</strong>
+      </div>
 
-          <div className="post-actions">
-  <button onClick={() => fetchComments(retweet.id)}>
-    <FaComment /> {comments[retweet.id]?.length || 0} Commentaires
-  </button>
-  <button onClick={() => handleShare(retweet.id)}>
-    <FaShare /> Partager
-  </button>
-  <button onClick={() => handleRetweet(retweet.id)}>
-    <FaRetweet /> Retweeter
-  </button>
-  <button onClick={() => handleLike(retweet.id)}>
-    ❤️ {likes[retweet.id] || 0}
-  </button>
-</div>
+      {/* Contenu de la publication retweetée */}
+      {retweet.media ? (
+        retweet.media.endsWith('.mp4') ? (
+          <video src={`${apiUrl}${retweet.media.replace(/\\/g, '/')}`} controls />
+        ) : (
+          <img src={`${apiUrl}${retweet.media.replace(/\\/g, '/')}`} alt={retweet.content} />
+        )
+      ) : (
+        <p>{retweet.content}</p>
+      )}
 
+      {/* Bouton de suppression */}
+      <button
+        className="delete-button"
+        onClick={() => handleDeleteRetweet(retweet.id)}
+        title="Supprimer ce retweet"
+      >
+        ✖
+      </button>
+
+      {/* Actions */}
+      <div className="post-actions">
+        <button onClick={() => fetchComments(retweet.id)}>
+          <FaComment /> {comments[retweet.id]?.length || 0} Commentaires
+        </button>
+        <button onClick={() => handleShare(retweet.id)}>
+          <FaShare /> Partager
+        </button>
+        <button onClick={() => handleRetweet(retweet.id)}>
+          <FaRetweet /> Retweeter
+        </button>
+        <button onClick={() => handleLike(retweet.id)}>
+          ❤️ {likes[retweet.id] || 0}
+        </button>
+      </div>
+
+      {/* Commentaires */}
+      {activeComments[retweet.id] && (
+        <div className="comments-section">
+          {comments[retweet.id]?.map((comment, index) => (
+            <div key={index} className="comment">
+              <img
+                src={comment.profilePicture ? `${apiUrl}${comment.profilePicture}` : '/default-profile.png'}
+                alt="Profil"
+                className="profile-picture-comment"
+              />
+              <strong>{comment.username}</strong>
+              <p>{comment.comment}</p>
+            </div>
+          ))}
+          <div className="add-comment-section">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+              placeholder="Ajouter un commentaire..."
+            />
+            <button onClick={() => handleComment(retweet.id, newComment)}>Envoyer</button>
+          </div>
         </div>
-      ))
-    ) : (
-      <p>Aucun retweet pour le moment.</p>
-    )}
+      )}
+    </div>
+  ))
+) : (
+  <p>Aucun retweet pour le moment.</p>
+)}
+
+
   </div>
 )}
 

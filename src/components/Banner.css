@@ -1,16 +1,12 @@
 .banner {
-  background-color: #ffcc00;
+  background-color: #ffc107;
   color: #000;
-  padding: 10px;
+  padding: 12px;
   text-align: center;
   font-weight: bold;
-  font-size: 16px;
-  position: sticky;
+  position: fixed;
   top: 0;
+  width: 100%;
   z-index: 999;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-.banner a {
-  color: blue;
-  text-decoration: underline;
 }
