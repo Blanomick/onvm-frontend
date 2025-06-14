@@ -11,6 +11,9 @@ import axios from 'axios'; // ✅ nécessaire pour handleComment
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
+const resolveMediaUrl = (url) => {
+  return url.startsWith('http') ? url : `${apiUrl}${url.replace(/\\/g, '/')}`;
+};
 
 
 
@@ -596,17 +599,17 @@ const handleComment = async (publicationId) => {
                 {posts.length > 0 ? (
   posts.map((post) => (
     <div key={post.id} className="profile-post">
+
       {post.media ? (
-        post.media.endsWith('.mp4') ? (
-          <video src={`${apiUrl}${post.media.replace(/\\/g, '/')}`} controls />
+  post.media.endsWith('.mp4') ? (
+    <video src={resolveMediaUrl(post.media)} controls />
+  ) : (
+    <img src={resolveMediaUrl(post.media)} alt={post.content} />
+  )
+) : (
+  <p>{post.content}</p>
+)}
 
-        ) : (
-          <img src={`${apiUrl}${post.media.replace(/\\/g, '/')}`} alt={post.content} />
-
-        )
-      ) : (
-        <p>{post.content}</p>
-      )}
 
       <button
         className="delete-button"
@@ -690,14 +693,15 @@ const handleComment = async (publicationId) => {
 
       {/* Contenu de la publication retweetée */}
       {retweet.media ? (
-        retweet.media.endsWith('.mp4') ? (
-          <video src={`${apiUrl}${retweet.media.replace(/\\/g, '/')}`} controls />
-        ) : (
-          <img src={`${apiUrl}${retweet.media.replace(/\\/g, '/')}`} alt={retweet.content} />
-        )
-      ) : (
-        <p>{retweet.content}</p>
-      )}
+  retweet.media.endsWith('.mp4') ? (
+    <video src={resolveMediaUrl(retweet.media)} controls />
+  ) : (
+    <img src={resolveMediaUrl(retweet.media)} alt={retweet.content} />
+  )
+) : (
+  <p>{retweet.content}</p>
+)}
+
 
       {/* Bouton de suppression */}
       <button
