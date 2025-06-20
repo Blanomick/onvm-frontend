@@ -37,7 +37,7 @@ const Publication = ({ user }) => {
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
   const [retweets, setRetweets] = useState({});
-  const [likes, setLikes] = useState({});
+  
 
   const [isCreating, setIsCreating] = useState(false);
   const [shareModal, setShareModal] = useState(null);
@@ -104,6 +104,8 @@ const Publication = ({ user }) => {
         return acc;
       }, {});
       setRetweets(initialRetweets);
+   setPublications(publicationsWithDetails);
+
     } catch (err) {
       console.error('[ERREUR] Erreur lors de la récupération des publications:', err);
     }
@@ -215,11 +217,8 @@ const handleDeletePublication = async (publicationId) => {
       await axios.post(`${apiUrl}/api/publications/${publicationId}/like`, {
         userId: user.id,
       });
-      await fetchPublications(); // Ajoutez cette ligne juste après le post
-      setLikes((prevLikes) => ({
-        ...prevLikes,
-        [publicationId]: (prevLikes[publicationId] || 0) + 1,
-      }));
+    await fetchPublications(); // le compteur sera mis à jour automatiquement
+
     } catch (err) {
       console.error('[ERREUR] Erreur lors du like:', err);
     }
@@ -432,7 +431,8 @@ const closeShareModal = () => {
 
   <button className="footer-button" onClick={() => handleLike(publication.id)}>
     <FaHeart />
-    <span>{likes[publication.id] || 0}</span>
+    <span>{publication.likesCount || 0}</span>
+
   </button>
 
   <button className="footer-button" onClick={() => setSelectedPublication(

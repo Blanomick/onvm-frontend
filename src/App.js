@@ -13,6 +13,7 @@ import CreateCommunity from './components/CreateCommunity';
 import MainNavigation from './components/MainNavigation';
 import Live from './components/Live';
 import Banner from './components/Banner';
+import EditBio from './components/EditBio';
 
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
@@ -58,6 +59,7 @@ React.useEffect(() => {
             element={user ? <MainNavigation /> : <Navigate to="/auth" />}
           />
 
+         <Route path="/edit-bio/:id" element={<EditBio currentUser={user} />} />
 
 
           {/* Affichage du profil d'un utilisateur spécifique */}

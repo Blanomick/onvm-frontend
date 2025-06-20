@@ -452,81 +452,93 @@ const handleComment = async (publicationId) => {
     <div className="profile-container">
       {profileUser ? (
         <>
-               <div className="profile-header">
-  
-               <img
-  src={
-    profileUser.profilePicture
-      ? `${apiUrl}${profileUser.profilePicture}`
-      : '/images/default-profile.png'
-  }
-  alt="Profile"
-  className="profile-picture"
-  onClick={isOwner ? handleProfilePictureClick : undefined}
-/>
+              <div className="profile-header">
+  <div className="profile-left">
+    <div className="profile-picture-section">
+      <img
+        src={
+          profileUser.profilePicture
+            ? `${apiUrl}${profileUser.profilePicture}`
+            : '/images/default-profile.png'
+        }
+        alt="Profile"
+        className="profile-picture"
+        onClick={isOwner ? handleProfilePictureClick : undefined}
+      />
 
+      {isOwner && (
+        <>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept="image/*"
+            onChange={handleFileChange}
+          />
 
+              {newProfileImage && (
+      <div className="cropper-section">
+        <Cropper
+          style={{ height: 300, width: '100%' }}
+          initialAspectRatio={1}
+          src={newProfileImage}
+          viewMode={1}
+          guides={false}
+          minCropBoxHeight={10}
+          minCropBoxWidth={10}
+          background={false}
+          responsive={true}
+          autoCropArea={1}
+          checkOrientation={false}
+          onInitialized={(instance) => {
+            setCropper(instance);
+          }}
+        />
+        <button onClick={handleProfileImageSave} style={{ marginTop: '10px' }}>
+          Enregistrer la photo
+        </button>
+      </div>
+    )}
 
-
-            <div className="profile-info">
-              <h2>{profileUser?.username || 'Nom indisponible'}</h2>
-  
-              {isOwner && <button>Modifier le profil</button>}
-  
-              <p className={`follower-count ${animateFollower ? 'pop' : ''}`}>
-  <strong>{followerCount}</strong> {followerCount === 1 ? 'abonné' : 'abonnés'}
-</p>
-
- 
-
-{isOwner ? (
-  <>
-    
-    <div className="profile-picture-container" onClick={handleProfilePictureClick}>
-  <input
-    type="file"
-    ref={fileInputRef}
-    style={{ display: 'none' }}
-    accept="image/*"
-    onChange={handleFileChange}
-  />
-  {showProfileMenu && (
-    <div className="profile-picture-menu">
-      <button onClick={handleViewProfilePicture}>Voir la photo</button>
-      <button onClick={handleOpenFilePicker}>Changer la photo</button>
+          {showProfileMenu && (
+            <div className="profile-picture-menu">
+              <button onClick={handleViewProfilePicture}>Voir la photo</button>
+              <button onClick={handleOpenFilePicker}>Changer la photo</button>
+            </div>
+          )}
+        </>
+      )}
     </div>
-  )}
+  </div>
+
+        
+
+  <div className="profile-details">
+    <h2 className="profile-username">{profileUser?.username || 'Nom indisponible'}</h2>
+
+    <div className="profile-stats">
+      <div><strong>{posts.length}</strong><span> publications</span></div>
+      <div className={`follower-count ${animateFollower ? 'pop' : ''}`}>
+  <strong>{followerCount}</strong><span> abonnés</span>
 </div>
 
+      <div><strong>{profileUser?.followingCount || 0}</strong><span> suivis</span></div>
+    </div>
 
-    {newProfileImage && (
+    {isOwner ? (
+      <button className="edit-button" onClick={() => navigate(`/edit-bio/${currentUser.id}`)}>
+  Modifier la bio
+</button>
 
-             
-                    <div>
-                      <Cropper
-                        src={newProfileImage}
-                        style={{ height: 200, width: '100%' }}
-                        aspectRatio={1}
-                        guides={false}
-                        viewMode={1}
-                        minCropBoxHeight={10}
-                        minCropBoxWidth={10}
-                        background={false}
-                        responsive={true}
-                        autoCropArea={1}
-                        checkOrientation={false}
-                        onInitialized={(instance) => setCropper(instance)}
-                      />
-                      <button onClick={handleProfileImageSave}>Confirmer la nouvelle photo de profil</button>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <button onClick={handleFollow}>{isFollowing ? 'Se désabonner' : 'Suivre'}</button>
-              )}
-            </div>
-          </div>
 
+      
+    ) : (
+      <button onClick={handleFollow}>
+        {isFollowing ? 'Se désabonner' : 'Suivre'}
+      </button>
+    )}
+  </div>
+</div>
 
 
   
