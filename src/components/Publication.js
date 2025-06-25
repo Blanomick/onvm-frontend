@@ -91,7 +91,10 @@ const Publication = ({ user }) => {
 
   const fetchPublications = async () => {
     try {
-      const response = await axios.get(`${apiUrl}/api/publications`);
+      const response = await axios.get(`${apiUrl}/api/publications`, {
+  params: { userId: user?.id }
+});
+
       const publicationsWithDetails = await Promise.all(
         response.data.map(async (publication) => {
           const commentsResponse = await axios.get(`${apiUrl}/api/publications/${publication.id}/comments`);
@@ -210,19 +213,35 @@ const handleDeletePublication = async (publicationId) => {
 };
 
 
+const handleLike = async (publicationId) => {
+  const userId = user?.id;
 
 
-  const handleLike = async (publicationId) => {
-    try {
-      await axios.post(`${apiUrl}/api/publications/${publicationId}/like`, {
-        userId: user.id,
-      });
-    await fetchPublications(); // le compteur sera mis à jour automatiquement
+  console.log('[FRONT] userId envoyé:', userId);
+  console.log('[FRONT] publicationId envoyé:', publicationId);
 
-    } catch (err) {
-      console.error('[ERREUR] Erreur lors du like:', err);
-    }
-  };
+  if (!userId) {
+    alert("Impossible de liker : identifiant utilisateur manquant.");
+    return;
+  }
+
+  try {
+    const response = await axios.post(`${apiUrl}/api/publications/${publicationId}/like`, {
+      userId: userId
+    });
+
+  console.log('[SUCCESS] Like ajouté:', response.data);
+fetchPublications(); // ← recharge les données mises à jour
+
+  } catch (err) {
+    console.error('[ERREUR] Erreur lors du like:', err);
+    alert(err?.response?.data?.message || 'Erreur lors du like.');
+  }
+};
+
+
+
+
   
   const handleRetweet = async (publicationId) => {
     if (!user || !user.id) {
@@ -261,18 +280,20 @@ const handleDeletePublication = async (publicationId) => {
     alert('Lien copié dans le presse-papiers.');
   };
 // Gestion des publications et des utilisateurs au chargement du composant
-useEffect(() => {
-  const fetchInitialData = async () => {
-    try {
-      await fetchPublications();
-      await fetchUsersList();
-    } catch (err) {
-      console.error('[ERREUR] Erreur lors du chargement des données initiales :', err);
-    }
-  };
 
+const fetchInitialData = async () => {
+  try {
+    await fetchPublications();
+    await fetchUsersList();
+  } catch (err) {
+    console.error('[ERREUR] Erreur lors du chargement des données initiales :', err);
+  }
+};
+
+useEffect(() => {
   fetchInitialData();
 }, []);
+
 
 // Gestion du partage d'une publication
 const handleSharePublication = (publicationId) => {
@@ -429,11 +450,18 @@ const closeShareModal = () => {
     <span>{retweets[publication.id] || 0}</span>
   </button>
 
-  <button className="footer-button" onClick={() => handleLike(publication.id)}>
-    <FaHeart />
-    <span>{publication.likesCount || 0}</span>
+<button
+  className="footer-button"
+  onClick={() => handleLike(publication.id, publication.userHasLiked)}
+  style={{ color: publication.userHasLiked ? 'black' : 'inherit' }}
+  title={publication.userHasLiked ? "Je n'aime plus" : "J'aime"}
+>
+  <FaHeart />
+  <span>{publication.likeCount || 0}</span>
+</button>
 
-  </button>
+
+
 
   <button className="footer-button" onClick={() => setSelectedPublication(
     selectedPublication === publication.id ? null : publication.id

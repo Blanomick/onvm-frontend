@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+      import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Auth from './components/Auth';
 import Profile from './components/profile';
@@ -14,6 +14,7 @@ import MainNavigation from './components/MainNavigation';
 import Live from './components/Live';
 import Banner from './components/Banner';
 import EditBio from './components/EditBio';
+import Download from './components/Download';
 
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
@@ -43,12 +44,18 @@ React.useEffect(() => {
         {showBanner && <Banner />}
 
 
+
         <Routes>
+
+            {/* Route de téléchargement (publique, avant Auth) */}
+          <Route path="/download" element={<Download />} />
+
           {/* Route par défaut vers Auth si l'utilisateur n'est pas connecté */}
           <Route
             path="/"
             element={user ? <Navigate to="/publication" /> : <Auth onLogin={handleLogin} />}
           />
+          
 
           {/* Route d'authentification utilisateur */}
           <Route path="/auth" element={<Auth onLogin={handleLogin} />} />

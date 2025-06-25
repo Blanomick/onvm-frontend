@@ -205,43 +205,57 @@ setLikes(likesMap);
     }
   };
 
-  const handleLike = async (postId) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/publications/${postId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: currentUser.id })
-      });
-  
-      if (response.ok) {
-        const updatedLikes = await response.json();
-        setLikes((prev) => ({ ...prev, [postId]: updatedLikes.count }));
-      } else {
-        alert("Erreur lors du like.");
-      }
-    } catch (error) {
-      console.error('[ERREUR] Erreur lors du like :', error);
-    }
-  };
-  
-          
 
-  const handleDeletePost = async (postId) => {
-    try {
-      const response = await fetch(`${apiUrl}/api/publications/${postId}`, {
-        method: 'DELETE',
-      });
-  
-      if (response.ok) {
-        alert('Publication supprimée avec succès!');
-        setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
-      } else {
-        alert("Erreur lors de la suppression de la publication.");
-      }
-    } catch (error) {
-      console.error('[ERREUR] Erreur lors de la suppression de la publication :', error);
+  const handleLike = async (postId) => {
+  if (!currentUser || !currentUser.id) {
+    console.error('[ERREUR] Utilisateur non connecté ou ID manquant.');
+    alert("Vous devez être connecté pour aimer une publication.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${apiUrl}/api/publications/${postId}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: currentUser.id })
+    });
+
+    if (response.ok) {
+      const updatedLikes = await response.json();
+      setLikes((prev) => ({ ...prev, [postId]: updatedLikes.count }));
+    } else {
+      alert("Erreur lors du like.");
     }
-  };
+  } catch (error) {
+    console.error('[ERREUR] Erreur lors du like :', error);
+  }
+};
+
+const handleDeletePost = async (postId) => {
+  const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette publication ?");
+  if (!confirmDelete) return;
+
+  try {
+    const response = await fetch(`${apiUrl}/api/publications/${postId}?userId=${currentUser.id}`, {
+      method: 'DELETE',
+    });
+
+    if (response.ok) {
+      alert('✅ Publication supprimée avec succès.');
+      setPosts((prevPosts) => prevPosts.filter((post) => post.id !== postId));
+    } else {
+      const error = await response.json();
+      console.error('[ERREUR] Réponse serveur:', error);
+      alert("❌ Une erreur est survenue lors de la suppression.");
+    }
+  } catch (error) {
+    console.error('[ERREUR] Erreur lors de la suppression de la publication :', error);
+    alert("❌ Impossible de supprimer la publication pour le moment.");
+  }
+};
+
+
+ 
   
 
   const handleDeleteRetweet = async (publicationId) => {
@@ -527,7 +541,7 @@ const handleComment = async (publicationId) => {
 
     {isOwner ? (
       <button className="edit-button" onClick={() => navigate(`/edit-bio/${currentUser.id}`)}>
-  Modifier la bio
+  Modifier le  profile 
 </button>
 
 
@@ -608,43 +622,53 @@ const handleComment = async (publicationId) => {
             {activeTab === 'publications' && (
               <>
                 <h3>Mes publications</h3>
+
+
                 {posts.length > 0 ? (
   posts.map((post) => (
-    <div key={post.id} className="profile-post">
-
-      {post.media ? (
-  post.media.endsWith('.mp4') ? (
-    <video src={resolveMediaUrl(post.media)} controls />
-  ) : (
-    <img src={resolveMediaUrl(post.media)} alt={post.content} />
-  )
-) : (
-  <p>{post.content}</p>
-)}
-
-
-      <button
-        className="delete-button"
-        onClick={() => handleDeletePost(post.id)}
-        title="Supprimer cette publication"
-      >
-        ✖
-      </button>
-
-      <div className="post-actions">
-        <button onClick={() => fetchComments(post.id)}>
-          <FaComment /> {comments[post.id]?.length || 0} Commentaires
-        </button>
-        <button onClick={() => handleShare(post.id)}>
-          <FaShare /> Partager
-        </button>
-        <button onClick={() => handleRetweet(post.id)}>
-          <FaRetweet /> Retweeter
-        </button>
-        <button onClick={() => handleLike(post.id)}>
-          ❤️ {likes[post.id] || 0}
-        </button>
+    <div key={post.id} className="publication">
+      <div className="user-info">
+        <img
+          src={post.profilePicture ? resolveMediaUrl(post.profilePicture) : '/default-profile.png'}
+          alt="profil"
+          className="profile-picture-comment"
+        />
+        <span>{post.username}</span>
       </div>
+
+      <p>{post.content}</p>
+
+      {post.media && post.mediatype === 'image' && (
+        <img src={resolveMediaUrl(post.media)} alt="publication" />
+      )}
+      {post.mediatype === 'video' && (
+        <video controls src={resolveMediaUrl(post.media)}></video>
+      )}
+      {post.mediatype === 'audio' && (
+        <audio controls src={resolveMediaUrl(post.media)}></audio>
+      )}
+
+     <div className="post-actions">
+  <button onClick={() => fetchComments(post.id)}>
+    <FaComment /> {comments[post.id]?.length || 0}
+  </button>
+  <button onClick={() => handleShare(post.id)}>
+    <FaShare />
+  </button>
+  <button onClick={() => handleRetweet(post.id)}>
+    <FaRetweet />
+  </button>
+  <button onClick={() => handleLike(post.id)}>
+    ❤️ {likes[post.id] || 0}
+  </button>
+
+  {isOwner && (
+    <button onClick={() => handleDeletePost(post.id)} title="Supprimer cette publication">
+      ✖
+    </button>
+  )}
+</div>
+
 
       {activeComments[post.id] && (
         <div className="comments-section">
@@ -662,21 +686,20 @@ const handleComment = async (publicationId) => {
           <div className="add-comment-section">
             <input
               type="text"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
               placeholder="Ajouter un commentaire..."
             />
-            <button onClick={() => handleComment(post.id, newComment)}>Envoyer</button>
+            <button onClick={() => handleComment(post.id)}>Envoyer</button>
           </div>
         </div>
       )}
-
-
     </div>
   ))
 ) : (
   <p>Aucune publication pour le moment.</p>
 )}
+
 
               </>
             )}
