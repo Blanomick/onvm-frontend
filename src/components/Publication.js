@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef , useCallback} from 'react';
 import axios from 'axios';
 import './Publication.css';
 import MainNavigation from './MainNavigation';
+import AdMultiplex from './AdMultiplex';
+
+
+
+
 import {
   FaRetweet,
   FaComment,
@@ -88,40 +93,40 @@ const Publication = ({ user }) => {
 
 
 
+const fetchPublications = useCallback(async () => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/publications`, {
+      params: { userId: user?.id }
+    });
 
-  const fetchPublications = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/api/publications`, {
-  params: { userId: user?.id }
-});
+    const publicationsWithDetails = await Promise.all(
+      response.data.map(async (publication) => {
+        const commentsResponse = await axios.get(`${apiUrl}/api/publications/${publication.id}/comments`);
+        return { ...publication, comments: commentsResponse.data };
+      })
+    );
 
-      const publicationsWithDetails = await Promise.all(
-        response.data.map(async (publication) => {
-          const commentsResponse = await axios.get(`${apiUrl}/api/publications/${publication.id}/comments`);
-          return { ...publication, comments: commentsResponse.data };
-        })
-      );
-      setPublications(publicationsWithDetails);
-      const initialRetweets = publicationsWithDetails.reduce((acc, pub) => {
-        acc[pub.id] = pub.retweetsCount || 0;
-        return acc;
-      }, {});
-      setRetweets(initialRetweets);
-   setPublications(publicationsWithDetails);
+    setPublications(publicationsWithDetails);
 
-    } catch (err) {
-      console.error('[ERREUR] Erreur lors de la récupération des publications:', err);
-    }
-  };
+    const initialRetweets = publicationsWithDetails.reduce((acc, pub) => {
+      acc[pub.id] = pub.retweetsCount || 0;
+      return acc;
+    }, {});
+    setRetweets(initialRetweets);
+  } catch (err) {
+    console.error('[ERREUR] Erreur lors de la récupération des publications:', err);
+  }
+}, [user?.id]);
 
-  const fetchUsersList = async () => {
-    try {
-      const response = await axios.get(`${apiUrl}/api/users`);
-      setUsersList(response.data);
-    } catch (err) {
-      console.error('[ERREUR] Erreur lors de la récupération des utilisateurs:', err);
-    }
-  };
+
+  const fetchUsersList = useCallback(async () => {
+  try {
+    const response = await axios.get(`${apiUrl}/api/users`);
+    setUsersList(response.data);
+  } catch (err) {
+    console.error('[ERREUR] Erreur lors de la récupération des utilisateurs:', err);
+  }
+}, []);
 
 
 
@@ -280,19 +285,19 @@ fetchPublications(); // ← recharge les données mises à jour
     alert('Lien copié dans le presse-papiers.');
   };
 // Gestion des publications et des utilisateurs au chargement du composant
-
-const fetchInitialData = async () => {
-  try {
-    await fetchPublications();
-    await fetchUsersList();
-  } catch (err) {
-    console.error('[ERREUR] Erreur lors du chargement des données initiales :', err);
-  }
-};
-
+   
 useEffect(() => {
+  const fetchInitialData = async () => {
+    try {
+      await fetchPublications();
+      await fetchUsersList();
+    } catch (err) {
+      console.error('[ERREUR] Erreur lors du chargement des données initiales :', err);
+    }
+  };
+
   fetchInitialData();
-}, []);
+}, [fetchPublications, fetchUsersList]); // ← ou [] si elles sont déclarées dans ce même fichier
 
 
 // Gestion du partage d'une publication
@@ -377,7 +382,8 @@ const closeShareModal = () => {
       {/* Liste des publications */}
       <div className="publications-list">
         {publications.length > 0 ? (
-          publications.map((publication) => (
+        publications.map((publication, i) => (
+
             <div key={publication.id} className="publication">
 {/* En-tête de la publication */}
 <div className="publication-header">
@@ -402,6 +408,7 @@ const closeShareModal = () => {
       title={`Voir le profil de ${publication.username || 'Utilisateur inconnu'}`}
     >
       {publication.username || 'Utilisateur inconnu'} {/* Nom d'utilisateur */}
+
     </h3>
     <span>
       {publication.created_at
@@ -568,6 +575,16 @@ const closeShareModal = () => {
                   
                 </div>
               )}
+
+
+
+{(i + 1) % 4 === 0 && (
+  <div className="publication ad-publication">
+    <AdMultiplex />
+  </div>
+)}
+
+
             </div>
           ))
         ) : (

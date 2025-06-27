@@ -65,6 +65,20 @@
   word-wrap: break-word;
 }
 
+
+.ad-publication {
+  margin: 20px 0;
+  padding: 10px;
+  background-color: #fafafa;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  text-align: center;
+}
+
+
+
+
+
 /* Header de chaque publication */
 .publication-header {
   display: flex;
