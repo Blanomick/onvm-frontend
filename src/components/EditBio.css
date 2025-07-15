@@ -1,0 +1,69 @@
+.bio-edit-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: radial-gradient(circle, #101010, #181818);
+  font-family: 'Orbitron', sans-serif;
+}
+
+.bio-edit-box {
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 500px;
+  width: 90%;
+  color: #fff;
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+}
+
+.bio-edit-box h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #00eaff;
+}
+
+.bio-textarea {
+  width: 100%;
+  height: 140px;
+  border: none;
+  border-radius: 10px;
+  padding: 15px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  resize: vertical;
+  margin-bottom: 20px;
+}
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.save-button, .exit-button {
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.save-button {
+  background-color: #00c7d4;
+  color: white;
+}
+
+.exit-button {
+  background-color: #ff4d4d;
+  color: white;
+}
+
+.save-button:hover,
+.exit-button:hover {
+  transform: scale(1.05);
+}

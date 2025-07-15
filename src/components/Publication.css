@@ -1,225 +1,240 @@
-/* Style général de la page */
+/* PAGE GÉNÉRALE */
 .publication-page {
-  background-color: #f0f0f0;
+  background-color: #fff9f9;
   min-height: 100vh;
-  padding: 20px;
-  font-family: 'Arial', sans-serif;
-  box-sizing: border-box;
+  padding: 16px;
+  font-family: 'Segoe UI', sans-serif;
   max-width: 600px;
   margin: 0 auto;
-  padding-bottom: 80px; /* Pour laisser de la place à la bottom nav */
+  padding-bottom: 80px;
+  position: relative;
   overflow-x: hidden;
 }
 
-/* Formulaire de création */
-.publication-form {
-  background-color: #ffffff;
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-}
-
-.publication-form textarea {
-  width: 100%;
-  height: 100px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  resize: none;
-  margin-bottom: 10px;
-  box-sizing: border-box;
-}
-
-.publication-form input[type="file"] {
-  margin-top: 10px;
-}
-
-.publication-form button {
-  background-color: #000000;
-  color: #ffffff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-.publication-form button:hover {
-  background-color: #333333;
-}
-
-/* Liste des publications */
+/* LISTE DES PUBLICATIONS */
 .publications-list {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 30px;
+  padding-top: 10px;
 }
 
-/* Carte publication */
+/* CARTE DE PUBLICATION */
 .publication {
-  background-color: #ffffff;
+  background: #fff;
   border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  word-wrap: break-word;
+  padding: 10px 12px; /* réduit l’espace intérieur */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s;
+  margin-bottom: 16px; /* réduit l’espace entre les boxes */
 }
 
 
+.publication:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* PUBLICITÉ */
 .ad-publication {
-  margin: 20px 0;
-  padding: 10px;
-  background-color: #fafafa;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  text-align: center;
+  background: #fdfdfd;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 30px 0; /* espace au-dessus et en dessous */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.07);
 }
 
 
+.ad-content {
+  text-align: center;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ad-label {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 8px;
+  display: block;
+}
+
+.ad-publication .publication-footer, .ad-publication .footer-button {
+  display: none !important;
+}
 
 
-
-/* Header de chaque publication */
+/* HEADER PUBLICATION */
 .publication-header {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 8px;
+  padding: 8px;
+  background-color: white; /* ou une autre couleur contrastante */
+  color: black; /* Assure que le texte est visible */
+  font-weight: bold;
+  z-index: 1;
 }
 
-.profile-picture {
-  width: 45px;
-  height: 45px;
+
+.publication-header img {
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 10px;
-  border: 2px solid #000000;
+}
+.publication-username {
+  color: black;
+  font-size: 14px;
+  overflow: visible;
+  white-space: nowrap;
 }
 
+.publication-profile-picture {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #000;
+}
+
+
+
 .publication-info {
-  flex-grow: 1;
+  flex: 1;
   overflow: hidden;
 }
 
 .clickable-username {
-  cursor: pointer;
-  color: #000000;
   font-weight: bold;
-  display: block;
+  color: #111;
+  cursor: pointer;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.publication-info span {
+  display: block;
+  font-size: 13px;
+  color: #666;
+  margin-top: 2px;
 }
 
 .delete-icon {
+  color: red;
   cursor: pointer;
-  color: #ff0000;
-  font-size: 20px;
+  font-size: 16px;
 }
 
-/* Contenu texte */
-.publication p {
-  margin-top: 10px;
-  margin-bottom: 10px;
-  word-wrap: break-word;
+/* CONTENU DE LA PUBLICATION */
+.publication-text {
+  margin: 8px 0;
+  font-size: 15px; /* réduit la taille du texte */
+  color: #222;
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: normal;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
-/* Médias */
+
+
+/* MÉDIA */
 .media img,
 .media video,
 .media audio {
-  max-width: 100%;
   width: 100%;
-  height: auto;
-  border-radius: 10px;
+  max-height: 500px;
+  object-fit: cover;
+  border-radius: 12px;
   margin-top: 10px;
 }
 
-/* Pied de la publication */
+/* FOOTER PUBLICATION */
 .publication-footer {
   display: flex;
   justify-content: space-around;
-  align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 8px 0;
-  border-top: 1px solid #eee;
-  flex-wrap: nowrap;
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #f1f0f0;
 }
-
 .footer-button {
-  flex: 1;
-  background-color: transparent;
+  background: none;
   border: none;
-  text-align: center;
-  font-size: 14px;
-  color: #333;
-  cursor: pointer;
+  color: black; /* Noir par défaut */
   display: flex;
-  flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 6px 0;
-  border-radius: 6px;
-  transition: background-color 0.2s ease-in-out;
+  font-size: 16px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.footer-button.liked {
+  color: red;
 }
 
 .footer-button:hover {
-  background-color: #f0f0f0;
+  opacity: 0.8;
 }
 
-
-
-
-
-
-.publication-footer button:hover {
-  background-color: #333333;
-}
-
-/* Section des commentaires */
+/* SECTION COMMENTAIRES */
 .comments-section {
-  margin-top: 15px;
-  background-color: #fafafa;
-  padding: 10px;
-  border-radius: 8px;
+  margin-top: 16px;
+  background: #fafafa;
+  padding: 12px;
+  border-radius: 12px;
 }
 
-/* Commentaire */
+/* COMMENTAIRE */
 .comment {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin-top: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #eee;
+  margin: 12px 0;
+  padding: 10px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
+
+
 .comment-profile-picture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 26px !important;
+  height: 26px !important;
+  border-radius: 50% !important;
   object-fit: cover;
+  border: 1px solid #ccc;
+  margin-top: 4px;
 }
+
 
 .comment-content {
   display: flex;
   flex-direction: column;
+  background-color: white;
+  padding: 6px 10px;
+  border-radius: 10px;
+  max-width: 100%;
   flex: 1;
 }
-
 .comment-username {
   font-weight: bold;
   font-size: 14px;
+  color: #222;
   margin-bottom: 4px;
-  color: #111;
 }
-
 .comment-text {
   font-size: 14px;
-  margin: 0;
+  line-height: 1.4;
   color: #333;
+  margin: 0;
 }
 
+/* MÉDIA DANS COMMENTAIRE */
 .comment-media {
   margin-top: 8px;
 }
@@ -227,110 +242,156 @@
 .comment-media img,
 .comment-media video,
 .comment-media audio {
-  max-width: 100%;
+  width: 100%;
   border-radius: 10px;
 }
 
-/* Ajouter un commentaire */
+/* AJOUT DE COMMENTAIRE */
 .add-comment {
-  margin-top: 15px;
+  margin-top: 12px;
 }
 
 .comment-textarea {
   width: 100%;
   height: 60px;
+  padding: 10px;
+  border-radius: 10px;
   border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 8px;
   resize: none;
-  margin-bottom: 10px;
-  box-sizing: border-box;
+  margin-bottom: 8px;
+  font-size: 14px;
 }
 
-/* Médias dans les commentaires */
 .comment-media-section {
   display: flex;
+  gap: 12px;
   align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
+  margin-bottom: 10px;
 }
 
-.media-icon {
-  cursor: pointer;
-  font-size: 20px;
-  color: #000000;
-}
-
+.media-icon,
 .microphone-icon {
+  font-size: 20px;
+  color: #000;
+  cursor: pointer;
   background: none;
   border: none;
-  color: #000000;
-  font-size: 20px;
-  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.media-icon:hover,
+.microphone-icon:hover {
+  transform: scale(1.1);
 }
 
 .microphone-icon.recording {
   color: red;
 }
 
-/* Bouton d'envoi */
 .send-comment-button {
-  background-color: #000000;
-  color: #ffffff;
+  background: #000;
+  color: #fff;
   border: none;
-  padding: 8px 15px;
-  border-radius: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background 0.3s ease;
 }
 
 .send-comment-button:hover {
-  background-color: #333333;
+  background: #333;
 }
 
-/* Modale de partage */
+/* MODALE DE PARTAGE */
 .share-modal {
-  background-color: #ffffff;
+  background: #fff;
   padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   max-width: 90%;
   margin: 0 auto;
+  animation: fadeIn 0.3s ease;
 }
 
 .share-modal button {
-  background-color: #000000;
-  color: white;
+  background: #000;
+  color: #fff;
   border: none;
   padding: 8px 12px;
-  border-radius: 6px;
+  border-radius: 8px;
+  margin-top: 10px;
   cursor: pointer;
-  margin: 5px 0;
 }
 
 .share-modal button:hover {
-  background-color: #333333;
+  background: #333;
 }
 
-/* Barre de navigation en bas */
+/* BARRE DE NAVIGATION BAS */
 .bottom-nav {
   position: fixed;
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #000000;
+  background: #000;
+  color: #fff;
+  font-size: 22px;
   display: flex;
   justify-content: space-around;
   align-items: center;
-  padding: 8px 0;
-  color: #ffffff;
-  font-size: 24px;
+  padding: 10px 0;
   z-index: 1000;
+  transition: transform 0.3s ease;
 }
 
 .bottom-nav.visible {
   display: flex;
+  transform: translateY(0);
 }
 
 .bottom-nav.hidden {
   display: none;
+  transform: translateY(100%);
+}
+
+/* LOGO BAR */
+.logo-bar {
+  background-color: rgba(255, 255, 255, 0.85);
+  padding: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.logo-img {
+  height: 50px;
+  object-fit: contain;
+}
+
+.metal-light {
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: metallic-glow 2.5s infinite;
+  z-index: 3;
+  pointer-events: none;
+}
+
+@keyframes metallic-glow {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
 }

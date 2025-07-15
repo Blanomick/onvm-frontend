@@ -2,9 +2,8 @@ import React, { useState, useEffect, useRef , useCallback} from 'react';
 import axios from 'axios';
 import './Publication.css';
 import MainNavigation from './MainNavigation';
-import AdMultiplex from './AdMultiplex';
-
-
+import AdMultiplex from '../components/AdMultiplex';
+import LogoBar from './LogoBar';
 
 
 import {
@@ -354,6 +353,8 @@ const closeShareModal = () => {
   
   return (
     <div className="publication-page">
+
+      <LogoBar /> 
      
       {/* Menu coulissant */}
       {showMenu && <MainNavigation onClose={toggleMenu} />}
@@ -383,20 +384,18 @@ const closeShareModal = () => {
       <div className="publications-list">
         {publications.length > 0 ? (
         publications.map((publication, i) => (
+         
 
             <div key={publication.id} className="publication">
 {/* En-tête de la publication */}
 <div className="publication-header">
   {/* Vérification et affichage de la photo de profil */}
-  <img
-    src={
-      publication.profilePicture
-        ? `${apiUrl}${publication.profilePicture}`
-        : '/default-profile.png' // Chemin par défaut si aucune photo de profil
-    }
-    alt={`${publication.username || 'Utilisateur'} - Profil`}
-    className="profile-picture"
-  />
+ <img
+  src={publication.profilePicture || '/default-profile.png'}
+  alt="Profil"
+  className="publication-profile-picture"
+/>
+
 
   {/* Informations sur la publication */}
   <div className="publication-info">
@@ -457,15 +456,16 @@ const closeShareModal = () => {
     <span>{retweets[publication.id] || 0}</span>
   </button>
 
+
 <button
-  className="footer-button"
+  className={`footer-button ${publication.userHasLiked ? 'liked' : ''}`}
   onClick={() => handleLike(publication.id, publication.userHasLiked)}
-  style={{ color: publication.userHasLiked ? 'black' : 'inherit' }}
   title={publication.userHasLiked ? "Je n'aime plus" : "J'aime"}
 >
   <FaHeart />
   <span>{publication.likeCount || 0}</span>
 </button>
+
 
 
 
@@ -488,15 +488,14 @@ const closeShareModal = () => {
                 <div className="comments-section">
                 {publication.comments.map((comment) => (
   <div key={comment.id} className="comment">
-    <img
-      src={
-        comment.profilePicture
-          ? `${apiUrl}${comment.profilePicture}`
-          : '/default-profile.png'
-      }
-      alt="Profil"
-      className="comment-profile-picture"
-    />
+  
+   <img
+  
+  src={comment.profilePicture || '/default-profile.png'}
+  alt="Profil"
+  className="comment-profile-picture"
+/>
+
 
     <div className="comment-content">
       <span className="comment-username">{comment.username}</span>
@@ -580,7 +579,10 @@ const closeShareModal = () => {
 
 {(i + 1) % 4 === 0 && (
   <div className="publication ad-publication">
+   <div className="ad-content">
+     <span className="ad-label">bonus </span>
     <AdMultiplex />
+     </div>
   </div>
 )}
 

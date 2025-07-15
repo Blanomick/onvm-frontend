@@ -15,11 +15,16 @@ import Live from './components/Live';
 import Banner from './components/Banner';
 import EditBio from './components/EditBio';
 import Download from './components/Download';
+import LanguageSettings from './components/LanguageSettings';
+import Chat from './components/Chat';
+import Conversations from './components/Conversations';
 
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
   const [isAdmin, setIsAdmin] = useState(false); // Indique si l'utilisateur est administrateur
 const [showBanner, setShowBanner] = useState(true);
+const [language, setLanguage] = useState(localStorage.getItem('language') || 'fr');
+
 
 React.useEffect(() => {
   const timer = setTimeout(() => {
@@ -46,6 +51,32 @@ React.useEffect(() => {
 
 
         <Routes>
+
+
+         <Route
+  path="/chat/:id"
+  element={user ? <Chat currentUser={user} /> : <Navigate to="/auth" />}
+/>
+
+
+   <Route
+  path="/conversations"
+  element={user ? <Conversations currentUser={user} /> : <Navigate to="/auth" />}
+/>
+
+
+<Route
+  path="/profile"
+  element={user ? <Navigate to={`/profile/${user.id}`} /> : <Navigate to="/auth" />}
+/>
+
+<Route
+  path="/notifications"
+  element={<Notifications user={user} />}
+/>
+
+
+         <Route path="/settings/language" element={<LanguageSettings setLanguage={setLanguage} />} />
 
             {/* Route de téléchargement (publique, avant Auth) */}
           <Route path="/download" element={<Download />} />
@@ -106,10 +137,11 @@ React.useEffect(() => {
           />
 
           {/* Page des paramètres */}
-          <Route
-            path="/settings"
-            element={user ? <Settings /> : <Navigate to="/auth" />}
-          />
+         <Route
+  path="/settings"
+  element={user ? <Settings currentUser={user} /> : <Navigate to="/auth" />}
+/>
+
 
           {/* Page de communauté */}
           <Route
@@ -141,3 +173,4 @@ React.useEffect(() => {
 };
 
 export default App;
+

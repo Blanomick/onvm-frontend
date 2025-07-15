@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import './Profile.css';
-import { FaVideo, FaComment, FaShare, FaRetweet, FaWallet } from 'react-icons/fa'; // Ajout de l'icône de portefeuille
+import { FaVideo  , FaComment, FaShare, FaRetweet, FaWallet, FaLock } from 'react-icons/fa'; // Ajout de l'icône de portefeuille
 import Cropper from 'react-cropper';
 import 'cropperjs/dist/cropper.css';
 import BottomNav from './BottomNav';
 import { FaHome, FaSearch, FaPlus, FaBell, FaUser  , FaUsers} from 'react-icons/fa';
 import axios from 'axios'; // ✅ nécessaire pour handleComment
+import { FiSettings } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -21,7 +23,7 @@ const Profile = ({ currentUser }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
-  const [bio, setBio] = useState('Bienvenue sur mon profil!');
+   const [ bio, setBio] = useState('Bienvenue sur mon profil!'); 
   const [followerCount, setFollowerCount] = useState(0);
   const [posts, setPosts] = useState([]);
   const [retweets, setRetweets] = useState([]);
@@ -46,6 +48,8 @@ const Profile = ({ currentUser }) => {
 const [commentContent, setCommentContent] = useState('');
 const [audioBlob, setAudioBlob] = useState(null);
 const [media, setMedia] = useState(null);
+const { t } = useTranslation();
+
 
 
 
@@ -91,22 +95,36 @@ const [media, setMedia] = useState(null);
         setTimeout(() => setAnimateFollower(false), 500);
       }
       setFollowerCount(newCount);
+
+     console.log('[DEBUG] Publications reçues dans Profile.js :');
+(postsData.publications || []).forEach((post, i) => {
+  console.log(`- [${i}] ID: ${post.id}, media: ${post.media}, mediatype: ${post.mediatype}`);
+});
+
+
+console.log('[DEBUG] Retweets reçus dans Profile.js :');
+retweetsData.forEach((retweet, i) => {
+  console.log(`- [${i}] ID: ${retweet.id}, media: ${retweet.media}, mediatype: ${retweet.mediatype}`);
+});
+
       
-      setPosts(postsData);
+     setPosts(postsData.publications || []);
+
       setRetweets(retweetsData);
       setIsFollowing(isFollowingData.isFollowing);
       
 
       setFollowerCount(followerData.totalFollowers || 0);
-setPosts(postsData);
-setRetweets(retweetsData);
-setIsFollowing(isFollowingData.isFollowing);
 
-// ✅ Ajoute ce bloc ici :
+
 const likesMap = {};
-[...postsData, ...retweetsData].forEach(post => {
+[...(postsData.publications || []), ...(retweetsData || [])].forEach(post => {
   likesMap[post.id] = post.likes || 0;
 });
+
+
+
+
 setLikes(likesMap);
 
     } catch (error) {
@@ -308,25 +326,26 @@ const handleDeletePost = async (postId) => {
     }
   };
   
+const handleMessageClick = async () => {
+  try {
+    const res = await fetch(`${apiUrl}/api/conversations/create`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender_id: currentUser.id,
+        receiver_id: profileUser.id,
+      }),
+    });
+
+    const convo = await res.json();
+    navigate(`/chat/${convo.id}`);
+  } catch (err) {
+    console.error("[ERREUR] Ouverture conversation :", err);
+    alert("Erreur lors de l'ouverture du message.");
+  }
+};
 
 
-  // Save biography
-  const handleBioSave = async () => {
-    try {
-      const response = await fetch(`${apiUrl}/api/users/${id}/bio`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bio })
-      });
-      if (response.ok) {
-        alert('Biographie mise à jour avec succès!');
-      } else {
-        alert('Erreur lors de la mise à jour de la biographie.');
-      }
-    } catch (error) {
-      console.error('[ERREUR] Erreur lors de l\'enregistrement de la biographie:', error);
-    }
-  };
 
   const handleProfilePictureClick = () => {
     setShowProfileMenu(!showProfileMenu);
@@ -462,23 +481,38 @@ const handleComment = async (publicationId) => {
   }, [lastScrollY]);
   
 
+
+
+console.log("🧪 Profil :", profileUser);
+console.log("🧪 Publications :", posts);
+console.log("🧪 Retweets :", retweets);
+
+
+
   return (
     <div className="profile-container">
       {profileUser ? (
+
         <>
+
+        <div className="settings-icon" onClick={() => navigate('/settings')}>
+  <FiSettings size={28} title="Paramètres" />
+</div>
+
               <div className="profile-header">
   <div className="profile-left">
     <div className="profile-picture-section">
-      <img
-        src={
-          profileUser.profilePicture
-            ? `${apiUrl}${profileUser.profilePicture}`
-            : '/images/default-profile.png'
-        }
-        alt="Profile"
-        className="profile-picture"
-        onClick={isOwner ? handleProfilePictureClick : undefined}
-      />
+     <img
+  src={
+    profileUser.profilePicture
+      ? resolveMediaUrl(profileUser.profilePicture)
+      : '/images/default-profile.png'
+  }
+  alt="Profile"
+  className="profile-picture"
+  onClick={isOwner ? handleProfilePictureClick : undefined}
+/>
+
 
       {isOwner && (
         <>
@@ -539,37 +573,23 @@ const handleComment = async (publicationId) => {
       <div><strong>{profileUser?.followingCount || 0}</strong><span> suivis</span></div>
     </div>
 
-    {isOwner ? (
-      <button className="edit-button" onClick={() => navigate(`/edit-bio/${currentUser.id}`)}>
-  Modifier le  profile 
-</button>
+   {!isOwner && (
+  <button onClick={handleFollow}>
+    {isFollowing ? 'Se désabonner' : 'Suivre'}
+  </button>
+)}
 
-
-      
-    ) : (
-      <button onClick={handleFollow}>
-        {isFollowing ? 'Se désabonner' : 'Suivre'}
-      </button>
-    )}
   </div>
 </div>
 
 
-  
-          <div className="profile-bio">
-            {isOwner ? (
-              <>
-                <textarea value={bio} onChange={(e) => setBio(e.target.value)} />
-                <button onClick={handleBioSave}>Enregistrer la bio</button>
-              </>
-            ) : (
-              <p>{profileUser.bio || 'Cet utilisateur n\'a pas encore de biographie.'}</p>
-            )}
-          </div>
-  
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px' }}>
-  <FaWallet size={60} color="#555" title="Portefeuille" />
+  <div className="profile-bio">
+  <p>{profileUser.bio || 'Cet utilisateur n\'a pas encore de biographie.'}</p>
 </div>
+
+         
+  
+     
 
 {extraData && (
   <div style={{ display: 'none' }}>
@@ -578,14 +598,46 @@ const handleComment = async (publicationId) => {
 )}
 
   
-          {isOwner && (
-            <div className="actions-section">
-              <button className="action-button live-button" onClick={() => navigate('/live')}>
-                <FaVideo /> Démarrer un Live
-              </button>
-              <button className="action-button withdraw-button" onClick={handleWithdraw}>
-                Retirer
-              </button>
+      <div className="actions-section">
+    <div className="actions-section">
+  {isOwner ? (
+    <>
+      <button
+  className="action-button live-button"
+  onClick={() => alert("🚫 Vous n'êtes pas encore autorisé(e) à faire des lives.")}
+  style={{
+    backgroundColor: '#ccc',
+    cursor: 'not-allowed',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+  }}
+>
+  <FaLock /> Live (bientôt)
+</button>
+
+
+ <button
+        className="action-button messages-button"
+        onClick={() => navigate('/conversations')}
+      >
+        💬 Mes Messages
+      </button>
+
+    </>
+  ) : (
+    <button className="custom-message-button" onClick={handleMessageClick}>
+  💬 Message
+</button>
+
+  )}
+</div>
+
+
+
+   
+      
+
 
               {transactions.length > 0 && (
   <div className="wallet-history">
@@ -599,7 +651,7 @@ const handleComment = async (publicationId) => {
 )}
 
             </div>
-          )}
+          
   
   
   
@@ -627,14 +679,18 @@ const handleComment = async (publicationId) => {
                 {posts.length > 0 ? (
   posts.map((post) => (
     <div key={post.id} className="publication">
-      <div className="user-info">
-        <img
-          src={post.profilePicture ? resolveMediaUrl(post.profilePicture) : '/default-profile.png'}
-          alt="profil"
-          className="profile-picture-comment"
-        />
-        <span>{post.username}</span>
-      </div>
+     
+     <div className="user-info">
+  <img
+    src={post.profilePicture ? resolveMediaUrl(post.profilePicture) : '/default-profile.png'}
+    alt="Profil"
+    className="profile-picture-comment"
+  />
+  <div className="user-details">
+    <strong className="username">@{post.username}</strong>
+  </div>
+</div>
+
 
       <p>{post.content}</p>
 
@@ -727,15 +783,18 @@ const handleComment = async (publicationId) => {
       </div>
 
       {/* Contenu de la publication retweetée */}
-      {retweet.media ? (
-  retweet.media.endsWith('.mp4') ? (
-    <video src={resolveMediaUrl(retweet.media)} controls />
-  ) : (
-    <img src={resolveMediaUrl(retweet.media)} alt={retweet.content} />
-  )
-) : (
-  <p>{retweet.content}</p>
+     
+ {retweet.mediatype === 'image' && (
+  <img src={resolveMediaUrl(retweet.media)} alt={retweet.content} />
 )}
+{retweet.mediatype === 'video' && (
+  <video src={resolveMediaUrl(retweet.media)} controls />
+)}
+{retweet.mediatype === 'audio' && (
+  <audio src={resolveMediaUrl(retweet.media)} controls />
+)}
+{!retweet.media && <p>{retweet.content}</p>}
+
 
 
       {/* Bouton de suppression */}

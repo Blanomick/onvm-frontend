@@ -1,37 +1,79 @@
-/* Supprime les styles liés au mode sombre ou clair */
+/* Police numérique Orbitron */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
 
-/* Styles généraux */
 .settings-container {
-    padding: 20px;
-  }
-  
-  .password-section {
-    margin-bottom: 20px;
-  }
-  
-  /* Boutons */
-  button {
-    padding: 10px 20px;
-    margin-top: 10px;
-    cursor: pointer;
-    background-color: #007bff; /* Couleur des boutons */
-    color: #fff; /* Texte blanc pour les boutons */
-    border: none;
-    border-radius: 4px;
-  }
-  
-  button:hover {
-    background-color: #0056b3; /* Couleur des boutons au survol */
-  }
-  
-  /* Inputs (champs de texte) */
-  input {
-    padding: 10px;
-    margin-bottom: 10px;
-    width: 100%;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #fff; /* Fond des champs en blanc */
-    color: #000; /* Texte noir pour les champs de texte */
-  }
-  
+  padding: 40px 20px;
+  max-width: 600px;
+  margin: auto;
+  font-family: 'Orbitron', sans-serif;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  border-radius: 16px;
+  margin-top: 80px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  color: #fff;
+}
+
+.settings-title {
+  text-align: center;
+  font-size: 26px;
+  margin-bottom: 30px;
+  color: #00fff0;
+}
+
+.edit-profile-button {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background-color: #00bcd4;
+  color: white;
+  font-size: 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 30px;
+  transition: background-color 0.3s ease, transform 0.2s;
+}
+
+.edit-profile-button:hover {
+  background-color: #0097a7;
+  transform: scale(1.02);
+}
+
+.bio-section {
+  margin-bottom: 30px;
+}
+
+.bio-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 14px;
+  margin-bottom: 12px;
+  resize: vertical;
+}
+
+.settings-section {
+  padding: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.settings-section h3 {
+  font-size: 20px;
+  color: #00e5ff;
+  margin-bottom: 10px;
+}
+
+.settings-section ul {
+  list-style-type: square;
+  padding-left: 20px;
+}
+
+.settings-section li {
+  margin-bottom: 8px;
+}

@@ -1,0 +1,73 @@
+/* Conteneur horizontal des stories */
+.stories-bar {
+  display: flex;
+  overflow-x: auto;
+  padding: 10px 0;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+
+/* Chaque story individuelle */
+.story-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 0 8px;
+  cursor: pointer;
+  min-width: 65px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* Image de la story (photo de profil ou média) */
+.story-image {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 2px solid #ff8501;
+  object-fit: cover;
+}
+
+/* Nom d’utilisateur sous la story */
+.story-username {
+  font-size: 12px;
+  margin-top: 5px;
+  color: #111;
+  max-width: 65px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Bouton “Votre story” avec + */
+.your-story {
+  position: relative;
+}
+
+.plus-icon {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: #0095f6;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 14px;
+  text-align: center;
+  line-height: 18px;
+  font-weight: bold;
+  border: 2px solid white;
+}
+
+/* Barre défilable : supprimer la scrollbar sur certains navigateurs */
+.stories-bar::-webkit-scrollbar {
+  display: none;
+}
+.stories-bar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

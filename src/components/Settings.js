@@ -1,82 +1,82 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
 import './Settings.css';
+import EditBio from './EditBio';
 
-const Settings = () => {
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+const apiUrl = process.env.REACT_APP_API_URL;
 
-  // Handle password change
-  const handlePasswordChange = async (e) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      alert('Les nouveaux mots de passe ne correspondent pas.');
-      return;
-    }
+const Settings = ({ currentUser }) => {
+  const [activeSection, setActiveSection] = useState(null);
+  const [balance, setBalance] = useState(0);
+  const navigate = useNavigate();
 
-    try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/users/change-password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          currentPassword,
-          newPassword
-        })
-      });
 
-      if (response.ok) {
-        alert('Mot de passe modifié avec succès.');
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-      } else {
-        alert('Erreur lors de la modification du mot de passe.');
+  useEffect(() => {
+    const fetchBalance = async () => {
+      try {
+        const res = await fetch(`${apiUrl}/api/wallet/${currentUser.id}/balance`);
+        const data = await res.json();
+        setBalance(data.balance || 0);
+      } catch (err) {
+        console.error("[ERREUR] Impossible de charger le portefeuille :", err);
       }
-    } catch (error) {
-      console.error('Erreur lors de la modification du mot de passe:', error);
+    };
+
+    if (currentUser) {
+      fetchBalance();
+    }
+  }, [currentUser]);
+
+  const renderContent = () => {
+    switch (activeSection) {
+      case 'bio':
+        return <EditBio currentUser={currentUser} />;
+      default:
+        return (
+          <div className="settings-menu">
+            <h2 className="settings-title">Paramètres de mon compte</h2>
+
+            <button
+              className="edit-profile-button"
+              onClick={() => setActiveSection('bio')}
+            >
+              ✏️ Modifier ma bio
+            </button>
+
+            <div className="settings-option" onClick={() => navigate('/settings/language')}>
+  🌐 Changer la langue
+</div>
+
+
+            <div className="wallet-box">
+              <h3>💼 Mon portefeuille</h3>
+              <p>Solde actuel : <strong>{balance} €</strong></p>
+              <button
+                className="withdraw-button"
+                onClick={() => alert("🚫 Fonction de retrait non disponible pour l'instant.")}
+              >
+                Retirer
+              </button>
+            </div>
+
+            <div className="settings-section">
+              <h3>À venir :</h3>
+              <ul>
+                <li>Changer le mot de passe</li>
+                <li>Notifications</li>
+                <li>Langue</li>
+                <li>Confidentialité</li>
+              </ul>
+            </div>
+          </div>
+        );
     }
   };
 
-  return (
-    <div className="settings-container">
-      <h2>Paramètres</h2>
+  if (!currentUser) return <p>Chargement...</p>;
 
-      {/* Section de modification de mot de passe */}
-      <div className="password-section">
-        <h3>Changer le mot de passe</h3>
-        <form onSubmit={handlePasswordChange}>
-          <div>
-            <label>Mot de passe actuel :</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label>Nouveau mot de passe :</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <label>Confirmer le nouveau mot de passe :</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit">Modifier le mot de passe</button>
-        </form>
-      </div>
-    </div>
-  );
+  return <div className="settings-container">{renderContent()}</div>;
 };
 
 export default Settings;
