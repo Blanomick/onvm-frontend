@@ -22,9 +22,6 @@
     "react-scripts": "^5.0.1",
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
-    "devDependencies": {
-    "^5.0.0"
-},
     "web-vitals": "^3.4.0"
   },
   "scripts": {
