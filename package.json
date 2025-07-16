@@ -38,7 +38,7 @@
     ],
 
  "rules": {
-      "no-unused-vars": "off" // C'est la ligne que vous devez ajouter
+      "no-unused-vars": "off" 
     }
 
   },
