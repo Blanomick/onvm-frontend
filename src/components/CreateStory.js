@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const CreateStory = ({ user }) => {
+const CreateStory = ({ currentUser }) => {
   const [media, setMedia] = useState(null);
   const [type, setType] = useState('');
   const apiUrl = process.env.REACT_APP_API_URL;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+  console.log("[DEBUG CreateStory] currentUser reçu :", currentUser);
 
-    if (!user?.id) {
+    if (!currentUser?.id) {
       alert("Utilisateur non connecté.");
       return;
     }
@@ -20,22 +22,15 @@ const CreateStory = ({ user }) => {
     }
 
     const formData = new FormData();
-    formData.append('userId', user.id);
+    formData.append('userId', currentUser.id);
     formData.append('media', media);
     formData.append('type', type);
-
-    // ✅ LOGS DE DEBUG : voir ce qu'on envoie
-    console.log('[DEBUG] userId :', user.id);
-    console.log('[DEBUG] type :', type);
-    console.log('[DEBUG] media :', media);
-    console.log('[DEBUG] URL envoyée :', `${apiUrl}/api/stories`);
 
     try {
       const response = await axios.post(`${apiUrl}/api/stories`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      console.log('[DEBUG] Réponse serveur :', response.data);
       alert("Story publiée avec succès !");
       setMedia(null);
     } catch (err) {
@@ -59,9 +54,6 @@ const CreateStory = ({ user }) => {
     } else {
       alert('Format de fichier non pris en charge.');
     }
-
-    console.log('[DEBUG] Fichier sélectionné :', file);
-    console.log('[DEBUG] Type déterminé :', type);
   };
 
   return (
@@ -73,6 +65,15 @@ const CreateStory = ({ user }) => {
           accept="image/*,video/*,audio/*"
           onChange={handleFileChange}
         />
+
+        {media && (
+          <div style={{ marginTop: '15px' }}>
+            {type === 'image' && <img src={URL.createObjectURL(media)} alt="preview" style={{ maxWidth: '100%', borderRadius: '10px' }} />}
+            {type === 'video' && <video src={URL.createObjectURL(media)} controls style={{ maxWidth: '100%', borderRadius: '10px' }} />}
+            {type === 'audio' && <audio src={URL.createObjectURL(media)} controls />}
+          </div>
+        )}
+
         <button type="submit" style={{ marginTop: '10px' }}>
           Publier
         </button>

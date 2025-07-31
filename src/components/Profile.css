@@ -175,6 +175,8 @@ textarea {
   box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
+
+
 .profile-post img,
 .profile-post video,
 .profile-post audio {
@@ -223,12 +225,8 @@ textarea {
   word-wrap: break-word;
 }
 
-.profile-picture-comment {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  object-fit: cover;
-}
+
+
 
 .add-comment-section {
   display: flex;
@@ -325,13 +323,17 @@ textarea {
   overflow: hidden;
 }
 
-.publication img {
+
+.publication .post-media {
   width: 100%;
-  max-height: 400px;
+  max-width: 100%;
+  max-height: 300px;
+   height: auto;
   object-fit: cover;
-  border-radius: 22px;
-  margin-top: 12px;
+  border-radius: 12px;
+  margin-top: 10px;
 }
+
 
 
 .profile-grid {
@@ -349,11 +351,12 @@ textarea {
   margin-bottom: 10px;
 }
 
-profile-picture-comment {
+.profile-picture-comment {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
+  border: 2px solid #ccc;
 }
 
 .user-details .username {

@@ -695,11 +695,21 @@ console.log("🧪 Retweets :", retweets);
       <p>{post.content}</p>
 
       {post.media && post.mediatype === 'image' && (
-        <img src={resolveMediaUrl(post.media)} alt="publication" />
-      )}
-      {post.mediatype === 'video' && (
-        <video controls src={resolveMediaUrl(post.media)}></video>
-      )}
+  <img
+    src={resolveMediaUrl(post.media)}
+    alt="publication"
+    className="post-media"
+  />
+)}
+{post.mediatype === 'video' && (
+  <video
+    controls
+    src={resolveMediaUrl(post.media)}
+    className="post-media"
+  ></video>
+)}
+
+
       {post.mediatype === 'audio' && (
         <audio controls src={resolveMediaUrl(post.media)}></audio>
       )}
@@ -730,11 +740,12 @@ console.log("🧪 Retweets :", retweets);
         <div className="comments-section">
           {comments[post.id]?.map((comment, index) => (
             <div key={index} className="comment">
-              <img
-                src={comment.profilePicture ? `${apiUrl}${comment.profilePicture}` : '/default-profile.png'}
-                alt="Profil"
-                className="profile-picture-comment"
-              />
+             <img
+  src={comment.profilePicture ? resolveMediaUrl(comment.profilePicture) : '/default-profile.png'}
+  alt="Profil"
+  className="profile-picture-comment"
+/>
+
               <strong>{comment.username}</strong>
               <p>{comment.comment}</p>
             </div>
@@ -783,16 +794,28 @@ console.log("🧪 Retweets :", retweets);
       </div>
 
       {/* Contenu de la publication retweetée */}
-     
- {retweet.mediatype === 'image' && (
-  <img src={resolveMediaUrl(retweet.media)} alt={retweet.content} />
+   {retweet.mediatype === 'image' && (
+  <img
+    src={resolveMediaUrl(retweet.media)}
+    alt={retweet.content}
+    className="post-media"
+  />
 )}
 {retweet.mediatype === 'video' && (
-  <video src={resolveMediaUrl(retweet.media)} controls />
+  <video
+    src={resolveMediaUrl(retweet.media)}
+    controls
+    className="post-media"
+  />
 )}
 {retweet.mediatype === 'audio' && (
-  <audio src={resolveMediaUrl(retweet.media)} controls />
+  <audio
+    src={resolveMediaUrl(retweet.media)}
+    controls
+    className="post-media"
+  />
 )}
+
 {!retweet.media && <p>{retweet.content}</p>}
 
 
@@ -827,11 +850,12 @@ console.log("🧪 Retweets :", retweets);
         <div className="comments-section">
           {comments[retweet.id]?.map((comment, index) => (
             <div key={index} className="comment">
-              <img
-                src={comment.profilePicture ? `${apiUrl}${comment.profilePicture}` : '/default-profile.png'}
-                alt="Profil"
-                className="profile-picture-comment"
-              />
+             <img
+  src={comment.profilePicture ? resolveMediaUrl(comment.profilePicture) : '/default-profile.png'}
+  alt="Profil"
+  className="profile-picture-comment"
+/>
+
               <strong>{comment.username}</strong>
               <p>{comment.comment}</p>
             </div>

@@ -18,12 +18,16 @@ import Download from './components/Download';
 import LanguageSettings from './components/LanguageSettings';
 import Chat from './components/Chat';
 import Conversations from './components/Conversations';
+import CreateStory from './components/CreateStory';
+import CreatePublication from './components/CreatePublication';
+import StoryPage from './components/StoryPage';
 
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
   const [isAdmin, setIsAdmin] = useState(false); // Indique si l'utilisateur est administrateur
 const [showBanner, setShowBanner] = useState(true);
 const [language, setLanguage] = useState(localStorage.getItem('language') || 'fr');
+const currentUser = JSON.parse(localStorage.getItem('user'));
 
 
 React.useEffect(() => {
@@ -52,12 +56,17 @@ React.useEffect(() => {
 
         <Routes>
 
+          <Route path="/create-publication" element={<CreatePublication currentUser={currentUser} />} />
+           
+           <Route path="/story/:id" element={<StoryPage />} />
+
 
          <Route
   path="/chat/:id"
   element={user ? <Chat currentUser={user} /> : <Navigate to="/auth" />}
 />
 
+<Route path="/create-story" element={<CreateStory currentUser={user} />} />
 
    <Route
   path="/conversations"

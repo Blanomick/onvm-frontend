@@ -1,0 +1,117 @@
+.create-publication-container {
+  padding: 20px;
+  max-width: 500px;
+  margin: auto;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.create-publication-container h2 {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  margin-top: 20px;
+  font-size: 14px;
+}
+
+.tag-input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+}
+
+.publish-button {
+  margin-top: 15px;
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background-color: #000;
+  color: white;
+  border-radius: 10px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.publish-button:hover {
+  background-color: #222;
+}
+
+.media-preview {
+  width: 100%;
+  margin-top: 15px;
+  border-radius: 12px;
+}
+
+.remove-button {
+  margin-top: 10px;
+  background-color: red;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.suggestion-box {
+  list-style: none;
+  margin-top: 4px;
+  padding: 6px 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  max-height: 150px;
+  overflow-y: auto;
+  background-color: white;
+  position: absolute;
+  z-index: 10;
+  width: 90%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-box li {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.suggestion-box li:hover {
+  background-color: #f0f0f0;
+}
+
+
+.preview-modal {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 999;
+}
+
+.preview-content {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+}
+
+.preview-content img,
+.preview-content video {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.preview-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}

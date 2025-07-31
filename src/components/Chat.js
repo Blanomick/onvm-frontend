@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useRef } from 'react';
 
 import { useParams } from 'react-router-dom';
-
 import './Chat.css';
+
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -13,6 +13,8 @@ const Chat = ({ currentUser }) => {
   const [media, setMedia] = useState(null);
   const messagesEndRef = useRef(null);
   const [chatUser, setChatUser] = useState(null);
+  
+
 
   useEffect(() => {
     // Cacher le LogoBar en ajoutant une classe globale
@@ -29,14 +31,14 @@ const Chat = ({ currentUser }) => {
         const res = await fetch(`${apiUrl}/api/messages/${conversationId}`);
     
      const data = await res.json();
-
-if (Array.isArray(data.messages)) {
-  setMessages(data.messages);
-  setChatUser(data.user); // 👈 utilisateur à afficher en haut
+if (Array.isArray(data)) {
+  setMessages(data);
+  // Optionnel : setChatUser(null); // si tu n’as pas d’utilisateur dans la réponse
 } else {
   console.warn('[WARN] Réponse inattendue :', data);
   setMessages([]);
 }
+
 
 
 
@@ -70,39 +72,39 @@ if (Array.isArray(data.messages)) {
 
 
 
+const handleSend = async () => {
+  if (!content.trim() && !media) return;
 
-  const handleSend = async () => {
-    if (!content.trim() && !media) return;
+  const formData = new FormData();
+  formData.append('conversation_id', conversationId);
+  formData.append('sender_id', currentUser.id);
+  if (content) formData.append('content', content);
+  if (media) formData.append('media', media);
 
-    const formData = new FormData();
-    formData.append('conversation_id', conversationId);
-    formData.append('sender_id', currentUser.id);
-    if (content) formData.append('content', content);
-    if (media) formData.append('media', media);
+  try {
+    await fetch(`${apiUrl}/api/messages/send`, {
+      method: 'POST',
+      body: formData,
+    });
 
-    try {
-      await fetch(`${apiUrl}/api/messages/send`, {
-        method: 'POST',
-        body: formData,
-      });
+    setContent('');
+    setMedia(null);
 
-      setContent('');
-      setMedia(null);
+    const res = await fetch(`${apiUrl}/api/messages/${conversationId}`);
+    const data = await res.json();
 
-      const res = await fetch(`${apiUrl}/api/messages/${conversationId}`);
-      const data = await res.json();
-
-      if (Array.isArray(data)) {
-        setMessages(data);
-      } else {
-        console.warn('[WARN] Réponse après envoi inattendue :', data);
-      }
-
-      scrollToBottom();
-    } catch (err) {
-      console.error('[ERREUR] Envoi message :', err);
+    if (Array.isArray(data)) {
+      setMessages(data);
+    } else {
+      console.warn('[WARN] Réponse après envoi inattendue :', data);
     }
-  };
+
+    scrollToBottom();
+  } catch (err) {
+    console.error('[ERREUR] Envoi message :', err);
+  }
+};
+
 
   return (
     <>
@@ -117,41 +119,66 @@ if (Array.isArray(data.messages)) {
 </div>
 
         <div className="chat-messages">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`chat-message ${msg.sender_id === currentUser.id ? 'sent' : 'received'}`}
-            >
-              <p>{msg.content}</p>
-              {msg.media && (
-                <>
-                  {msg.media.endsWith('.mp4') ? (
-                    <video src={apiUrl + msg.media} controls />
-                  ) : msg.media.endsWith('.mp3') || msg.media.endsWith('.ogg') ? (
-                    <audio src={apiUrl + msg.media} controls />
-                  ) : (
-                    <img src={apiUrl + msg.media} alt="fichier" />
-                  )}
-                </>
-              )}
-            </div>
-          ))}
+       {messages.map((msg) => {
+  const isStoryComment = msg.content?.includes('<img') || msg.content?.includes('<video') || msg.content?.includes('<audio');
+
+  return (
+    <div
+      key={msg.id}
+      className={`chat-message ${msg.sender_id === currentUser.id ? 'sent' : 'received'} ${isStoryComment ? 'story-comment' : ''}`}
+    >
+      {isStoryComment && (
+        <div className="story-comment-label">💬 Commentaire sur une story :</div>
+      )}
+
+      <div
+        className="message-html"
+        dangerouslySetInnerHTML={{ __html: msg.content }}
+      />
+
+      {msg.media && (
+        <>
+          {msg.media.endsWith('.mp4') ? (
+            <video src={apiUrl + msg.media} controls />
+          ) : msg.media.endsWith('.mp3') || msg.media.endsWith('.ogg') ? (
+            <audio src={apiUrl + msg.media} controls />
+          ) : (
+            <img src={apiUrl + msg.media} alt="fichier" />
+          )}
+        </>
+      )}
+    </div>
+  );
+})}
+
           <div ref={messagesEndRef} />
         </div>
 
-        <div className="chat-input">
-          <textarea
-            placeholder="Votre message..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-          />
-          <input
-            type="file"
-            accept="image/*,audio/*,video/*"
-            onChange={(e) => setMedia(e.target.files[0])}
-          />
-          <button onClick={handleSend}>Envoyer</button>
-        </div>
+      
+
+      <div className="chat-input-bar">
+  <label htmlFor="media-input" className="chat-icon-button">
+    📷
+  </label>
+  <input
+    type="file"
+    id="media-input"
+    accept="image/*,video/*,audio/*"
+    style={{ display: 'none' }}
+    onChange={(e) => setMedia(e.target.files[0])}
+  />
+  <input
+    className="chat-text-input"
+    type="text"
+    placeholder="Écrire un message..."
+    value={content}
+    onChange={(e) => setContent(e.target.value)}
+  />
+  <button className="chat-send-button" onClick={handleSend}>Envoyer</button>
+</div>
+
+
+
       </div>
 
       

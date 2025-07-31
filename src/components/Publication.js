@@ -15,7 +15,7 @@ import {
   FaMicrophone,
   FaImage,
   FaVideo,
-  FaTimes,
+  FaTimes,                                                        
   FaCopy,
   FaHeart,
   FaUser,
@@ -40,9 +40,8 @@ const Publication = ({ user }) => {
   const [publications, setPublications] = useState([]);
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
-  const [retweets, setRetweets] = useState({});
-  
-
+  const [retweets, setRetweets] = useState({}); 
+const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [shareModal, setShareModal] = useState(null);
   const [usersList, setUsersList] = useState([]);
@@ -619,7 +618,8 @@ const closeShareModal = () => {
       <div className={`bottom-nav ${showBottomNav ? 'visible' : 'hidden'}`}>
         <FaHome onClick={() => navigate('/')} title="Accueil" />
         <FaSearch onClick={() => navigate('/search')} title="Recherche" />
-        <FaPlus onClick={() => setIsCreating(true)} title="Créer une publication" />
+        <FaPlus onClick={() => setShowCreateOptions(true)} title="Créer" />
+
 
 
 
@@ -631,6 +631,18 @@ const closeShareModal = () => {
 <div style={{ display: 'none' }}>
   <FaUsers />
 </div>
+
+
+{showCreateOptions && (
+  <div className="create-options-modal">
+    <div className="create-options-content">
+      <h4>Que souhaitez-vous créer ?</h4>
+      <button onClick={() => navigate('/create-publication')}>Créer une publication</button>
+      <button onClick={() => navigate('/create-story')}>Créer une story</button>
+      <button onClick={() => setShowCreateOptions(false)}>Annuler</button>
+    </div>
+  </div>
+)}
 
     </div>
   );

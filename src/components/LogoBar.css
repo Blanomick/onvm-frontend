@@ -1,41 +1,51 @@
-.logo-bar-container {
-  position: fixed;
-  top: 0;
-  width: 100%;
-  height: 100px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+/* Conteneur principal de la barre de stories */
+.story-bar {
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s ease-in-out;
-  overflow: hidden;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 12px 15px;
+  background-color: #fff;
+  border-bottom: 1px solid #e6e6e6;
+  scroll-snap-type: x mandatory;
 }
 
-.logo-bar-container.hidden {
-  transform: translateY(-100%);
+/* Chaque cercle de story */
+.story-circle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 70px;
+  flex-shrink: 0;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: transform 0.2s ease;
 }
 
-.logo-bar-container.visible {
-  transform: translateY(0);
+.story-circle:hover {
+  transform: scale(1.05);
 }
 
-.logo-wrapper {
-  width: 80px;
-  height: 80px;
-  position: relative;
-  z-index: 1;
+/* Avatar de la story */
+.story-profile {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #ff5e00;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  margin-bottom: 4px;
 }
 
-.logo-liquid {
-  font-size: 70px;
-  font-weight: bold;
-  color: #ffffff;
+/* Nom d'utilisateur */
+.story-username {
+  font-size: 12px;
+  font-weight: 500;
   text-align: center;
-  transform-origin: center;
-  will-change: transform;
+  color: #222;
+  max-width: 60px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
