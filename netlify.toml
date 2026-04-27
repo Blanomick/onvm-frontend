@@ -1,7 +1,11 @@
 [build]
-  command = "npm install --legacy-peer-deps && npm run build"
+  command = "npm install --legacy-peer-deps && chmod +x ./node_modules/.bin/react-scripts && npm run build"
   publish = "build"
 
 [context.production.environment]
-  NODE_VERSION = "18"
+  NODE_VERSION = "20.11.1"
 
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
