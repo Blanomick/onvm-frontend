@@ -1,16 +1,68 @@
 .conversations-page {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: 'Segoe UI', sans-serif;
+  min-height: 100vh;
+  background: #fff;
+  padding: 18px 16px 90px;
+  font-family: Arial, sans-serif;
 }
 
-.conversations-page h2 {
-  font-size: 24px;
+.conversation-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.conversation-topbar h2 {
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.icon-btn {
+  border: none;
+  background: transparent;
+  font-size: 28px;
   font-weight: bold;
-  margin-bottom: 20px;
+}
+
+.conversation-search {
+  margin: 25px 0;
+  background: #f0f1f4;
+  padding: 15px 18px;
+  border-radius: 28px;
   text-align: center;
-  color: #333;
+  color: #555;
+  font-size: 16px;
+}
+
+.conversation-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.conversation-tabs button {
+  border: 1px solid #ddd;
+  background: white;
+  padding: 11px 20px;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.conversation-tabs button.active {
+  background: #f1f1f1;
+  border-color: #f1f1f1;
+}
+
+.create-group-btn {
+  width: 100%;
+  border: none;
+  background: #111;
+  color: white;
+  padding: 14px;
+  border-radius: 18px;
+  font-weight: 700;
+  margin-bottom: 18px;
 }
 
 .conversation-list {
@@ -22,65 +74,60 @@
 .conversation-item {
   display: flex;
   align-items: center;
-  padding: 12px 16px;
-  background-color: #fff;
-  border-radius: 12px;
-  margin-bottom: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-  transition: transform 0.1s ease, background-color 0.3s;
+  gap: 14px;
+  padding: 13px 0;
   cursor: pointer;
 }
 
-.conversation-item:hover {
-  transform: translateY(-2px);
-  background-color: #f3f6ff;
-}
-
 .conversation-avatar {
-  width: 50px;
-  height: 50px;
-  object-fit: cover;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
-  margin-right: 16px;
-  border: 2px solid #007bff;
+  object-fit: cover;
+  background: #eee;
 }
 
 .conversation-info {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.conversation-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  min-width: 0;
 }
 
 .conversation-name {
-  font-weight: 600;
   font-size: 17px;
-  color: #222;
-}
-
-.conversation-time {
-  font-size: 12px;
-  color: #999;
+  font-weight: 800;
+  color: #111;
 }
 
 .conversation-preview {
-  font-size: 14px;
-  color: #555;
   margin-top: 4px;
+  color: #333;
+  font-size: 15px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.conversation-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.conversation-time {
+  font-size: 13px;
+  color: #555;
+}
+
 .unread-dot {
-  width: 12px;
-  height: 12px;
-  background-color: #ff3b30;
+  width: 10px;
+  height: 10px;
+  background: #4d5cff;
   border-radius: 50%;
-  margin-left: 10px;
+}
+
+.empty-conversations {
+  text-align: center;
+  color: #777;
+  margin-top: 40px;
 }
