@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Conversations.css';
@@ -12,6 +13,7 @@ const resolveMediaUrl = (url) => {
 
 const Conversations = ({ currentUser }) => {
   const [conversations, setConversations] = useState([]);
+  const [activeTab, setActiveTab] = useState('principal');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,63 +24,120 @@ const Conversations = ({ currentUser }) => {
 
         if (Array.isArray(data)) {
           setConversations(data);
-        } else {
-          console.warn('[WARN] Format inattendu des conversations :', data);
         }
       } catch (err) {
         console.error('[ERREUR] Chargement conversations :', err);
       }
     };
 
-    if (currentUser?.id) {
-      fetchConversations();
-    }
+    if (currentUser?.id) fetchConversations();
   }, [currentUser]);
+
+  const filteredConversations = conversations.filter((conv) => {
+    if (activeTab === 'principal') return !conv.is_request && !conv.is_group;
+    if (activeTab === 'demandes') return conv.is_request;
+    if (activeTab === 'groupes') return conv.is_group;
+    return true;
+  });
 
   return (
     <div className="conversations-page">
-      <h2>Mes Conversations</h2>
-      {conversations.length > 0 ? (
+      <div className="conversation-topbar">
+        <button className="icon-btn">☰</button>
+        <h2>Messages</h2>
+        <button className="icon-btn" onClick={() => navigate('/new-message')}>✎</button>
+      </div>
+
+      <div className="conversation-search">
+        Rechercher ou démarrer une conversation
+      </div>
+
+      <div className="conversation-tabs">
+        <button
+          className={activeTab === 'principal' ? 'active' : ''}
+          onClick={() => setActiveTab('principal')}
+        >
+          Principal
+        </button>
+
+        <button
+          className={activeTab === 'demandes' ? 'active' : ''}
+          onClick={() => setActiveTab('demandes')}
+        >
+          Demandes
+        </button>
+
+        <button
+          className={activeTab === 'groupes' ? 'active' : ''}
+          onClick={() => setActiveTab('groupes')}
+        >
+          Groupes
+        </button>
+      </div>
+
+      {activeTab === 'groupes' && (
+        <button
+          className="create-group-btn"
+          onClick={() => navigate('/groups/create')}
+        >
+          + Créer un groupe
+        </button>
+      )}
+
+      {filteredConversations.length > 0 ? (
         <ul className="conversation-list">
-          {conversations.map((conv) => (
+          {filteredConversations.map((conv) => (
             <li
               key={conv.id}
               className="conversation-item"
-              onClick={() => navigate(`/chat/${conv.id}`)}
+              onClick={() =>
+                conv.is_group
+                  ? navigate(`/groups/${conv.id}`)
+                  : navigate(`/chat/${conv.id}`)
+              }
             >
               <img
-                src={resolveMediaUrl(conv.profilePicture)}
+                src={resolveMediaUrl(conv.profilePicture || conv.groupPicture)}
                 alt="profil"
                 className="conversation-avatar"
               />
+
               <div className="conversation-info">
-                <div className="conversation-header">
-                  <span className="conversation-name">
-                    {conv.username || `Utilisateur inconnu`}
-                  </span>
-                  <span className="conversation-time">
-                    {conv.last_message_time
-                      ? new Date(conv.last_message_time).toLocaleTimeString([], {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })
-                      : ''}
-                  </span>
+                <div className="conversation-name">
+                  {conv.groupName || conv.username || 'Utilisateur inconnu'}
                 </div>
+
                 <div className="conversation-preview">
                   {conv.last_message
-                    ? conv.last_message.slice(0, 50) +
-                      (conv.last_message.length > 50 ? '...' : '')
-                    : <i>Aucun message</i>}
+                    ? conv.last_message.slice(0, 45) +
+                      (conv.last_message.length > 45 ? '...' : '')
+                    : 'Aucun message'}
                 </div>
               </div>
-              {conv.is_unread && <div className="unread-dot" title="Nouveau message"></div>}
+
+              <div className="conversation-right">
+                <span className="conversation-time">
+                  {conv.last_message_time
+                    ? new Date(conv.last_message_time).toLocaleDateString('fr-FR', {
+                        day: 'numeric',
+                        month: 'short',
+                      })
+                    : ''}
+                </span>
+
+                {conv.is_unread && <span className="unread-dot"></span>}
+              </div>
             </li>
           ))}
         </ul>
       ) : (
-        <p>Aucune conversation encore.</p>
+        <p className="empty-conversations">
+          {activeTab === 'groupes'
+            ? 'Aucun groupe pour le moment.'
+            : 'Aucune conversation pour le moment.'}
+        </p>
       )}
+
       <BottomNav />
     </div>
   );
