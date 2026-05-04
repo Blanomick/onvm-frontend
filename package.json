@@ -12,7 +12,9 @@
     "dotenv": "^16.4.5",
     "gsap": "^3.13.0",
     "i18next": "^23.2.3",
+    "multer": "^2.1.1",
     "process": "^0.11.10",
+    "qrcode.react": "^4.2.0",
     "react": "^18.2.0",
     "react-cropper": "^2.3.3",
     "react-dom": "^18.2.0",
@@ -36,11 +38,9 @@
       "react-app",
       "react-app/jest"
     ],
-
- "rules": {
-      "no-unused-vars": "off" 
+    "rules": {
+      "no-unused-vars": "off"
     }
-
   },
   "browserslist": {
     "production": [

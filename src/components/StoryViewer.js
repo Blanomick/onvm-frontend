@@ -12,12 +12,14 @@ const resolveMediaUrl = (url) => {
 };
 
 const StoryViewer = ({ stories = [], currentIndex, onClose }) => {
-  const [groupIndex, setGroupIndex] = useState(currentIndex);
+ 
+ const [groupIndex, setGroupIndex] = useState(currentIndex);
   const [storyIndex, setStoryIndex] = useState(0);
   const [visible, setVisible] = useState(true);
 const [newComment, setNewComment] = useState('');
   const currentGroup = stories[groupIndex];
   const currentUser = JSON.parse(localStorage.getItem('user'));
+const [views, setViews] = useState([]);
 
 const handleSendPrivateMessage = async () => {
   if (!newComment.trim()) return;
@@ -100,8 +102,9 @@ const handleSendPrivateMessage = async () => {
 
   useEffect(() => {
     if (!story) return;
-    setVisible(false);
-    const fadeTimer = setTimeout(() => setVisible(true), 200);
+   setVisible(false);
+const fadeTimer = setTimeout(() => setVisible(true), 50); // plus rapide
+
     const duration = story.type === 'image' ? 5000 : 10000;
 
     const autoNextTimer = setTimeout(() => {
@@ -143,35 +146,94 @@ const handleSendPrivateMessage = async () => {
           </div>
         </div>
 
-        <div className="story-content">
-          {story.type === 'image' && <img src={resolveMediaUrl(story.media)} alt="story" />}
-          {story.type === 'video' && <video src={resolveMediaUrl(story.media)} controls autoPlay />}
-          {story.type === 'audio' && <audio src={resolveMediaUrl(story.media)} controls autoPlay />}
-        </div>
 
-        <div className="arrow left" onClick={handlePrev}><FaChevronLeft /></div>
-        <div className="arrow right" onClick={handleNext}><FaChevronRight /></div>
+
+     <div className="progress-bar">
+  <div
+    className="progress"
+    style={{
+      width: visible ? '100%' : '0%',
+      transition: story.type === 'image' ? '5s linear' : '10s linear'
+    }}
+  ></div>
+</div>
+
+
+
+
+       <div className="story-content">
+  {story.type === 'image' && (
+    <img
+      src={resolveMediaUrl(story.media)}
+      alt={`Story de ${currentGroup.username}`}
+      className="story-media-image"
+    />
+  )}
+  {story.type === 'video' && (
+    <video
+      src={resolveMediaUrl(story.media)}
+      controls
+      autoPlay
+      className="story-media-video"
+    />
+  )}
+  {story.type === 'audio' && (
+    <audio
+      src={resolveMediaUrl(story.media)}
+      controls
+      autoPlay
+      className="story-media-audio"
+    />
+  )}
+</div>
+
+<div className="arrow left" onClick={handlePrev} role="button" aria-label="Précédent">
+  <FaChevronLeft />
+</div>
+<div className="arrow right" onClick={handleNext} role="button" aria-label="Suivant">
+  <FaChevronRight />
+</div>
 
 {currentUser?.id !== currentGroup?.userId && (
   <div className="story-footer">
     <input
       type="text"
-      placeholder="Envoyer un message privé à l’auteur..."
+      className="comment-input"
+      placeholder="💬 Répondre à cette story..."
       value={newComment}
       onChange={(e) => setNewComment(e.target.value)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') handleSendPrivateMessage();
+        if (e.key === 'Enter') handleSendPrivateMessage();  // ✅ CORRECTION : "Enter" sans espace
       }}
     />
-    <div className="story-icons">
-      <FaHeart />
-      <FaShare />
-    </div>
+    <button className="send-button" onClick={handleSendPrivateMessage}>
+      Envoyer
+    </button>
   </div>
 )}
 
 
+
       </div>
+
+      {currentUser?.id === currentGroup?.userId && views.length > 0 && (
+  <div className="story-views-section">
+    <strong>👀 {views.length} vue(s)</strong>
+    <ul>
+      {views.map(viewer => (
+        <li key={viewer.id} style={{ marginTop: '5px' }}>
+          <img
+            src={resolveMediaUrl(viewer.profilePicture) || '/default-profile.png'}
+            alt={viewer.username}
+            style={{ width: '24px', height: '24px', borderRadius: '50%', marginRight: '8px' }}
+          />
+          {viewer.username}
+        </li>
+      ))}
+    </ul>
+  </div>
+)}
+
     </div>
   );
 };

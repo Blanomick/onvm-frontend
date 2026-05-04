@@ -1,0 +1,68 @@
+.invitation-container {
+  max-width: 500px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  font-family: 'Arial', sans-serif;
+}
+
+.invitation-container h2 {
+  font-size: 1.8rem;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.invitation-link-box {
+  margin-bottom: 2rem;
+}
+
+.invitation-link-box input {
+  width: 100%;
+  padding: 0.7rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.invitation-link-box button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.invitation-link-box button:hover {
+  background-color: #0056b3;
+}
+
+.invitation-qr {
+  margin-bottom: 2rem;
+}
+
+.invitation-qr p {
+  margin-bottom: 1rem;
+  font-weight: bold;
+  color: #555;
+}
+
+.back-button {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.back-button:hover {
+  background-color: #ddd;
+}

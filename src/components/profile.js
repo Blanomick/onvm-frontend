@@ -13,9 +13,28 @@ import { useTranslation } from 'react-i18next';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
-const resolveMediaUrl = (url) => {
-  return url.startsWith('http') ? url : `${apiUrl}${url.replace(/\\/g, '/')}`;
+const normalizeMedia = (media, kind = 'image') => {
+  try {
+    const parsed = typeof media === 'string' ? JSON.parse(media) : media;
+    if (Array.isArray(parsed)) {
+      return parsed.map(item => ({
+        url: item.url || item,
+        kind: item.kind || kind,
+        type: kind,
+      }));
+    }
+    return [{ url: parsed.url || parsed, kind: parsed.kind || kind, type: kind }];
+  } catch (e) {
+    return [];
+  }
 };
+
+
+const resolveMediaUrl = (url) => {
+  if (!url) return '';
+  return url.startsWith('http') ? url : `${apiUrl}/${url.replace(/\\/g, '/')}`;
+};
+
 
 
 
@@ -108,9 +127,16 @@ retweetsData.forEach((retweet, i) => {
 });
 
       
-     setPosts(postsData.publications || []);
+    setPosts((postsData.publications || []).map(p => ({
+  ...p,
+  media: normalizeMedia(p.media, p.mediatype),
+})));
 
-      setRetweets(retweetsData);
+setRetweets((retweetsData || []).map(r => ({
+  ...r,
+  media: normalizeMedia(r.media, r.mediatype),
+})));
+
       setIsFollowing(isFollowingData.isFollowing);
       
 
@@ -279,7 +305,7 @@ const handleDeletePost = async (postId) => {
   const handleDeleteRetweet = async (publicationId) => {
     try {
       const response = await fetch(
-        `${apiUrl}/api/retweets/${publicationId}/${currentUser.id}`,
+        `${apiUrl}/api/users/retweets/${publicationId}/${currentUser.id}`,
         {
           method: 'DELETE',
         }
@@ -495,9 +521,12 @@ console.log("🧪 Retweets :", retweets);
 
         <>
 
-        <div className="settings-icon" onClick={() => navigate('/settings')}>
-  <FiSettings size={28} title="Paramètres" />
-</div>
+       {isOwner && (
+  <div className="settings-icon" onClick={() => navigate('/settings')}>
+    <FiSettings size={28} title="Paramètres" />
+  </div>
+)}
+
 
               <div className="profile-header">
   <div className="profile-left">
@@ -694,25 +723,39 @@ console.log("🧪 Retweets :", retweets);
 
       <p>{post.content}</p>
 
-      {post.media && post.mediatype === 'image' && (
-  <img
-    src={resolveMediaUrl(post.media)}
-    alt="publication"
-    className="post-media"
-  />
-)}
-{post.mediatype === 'video' && (
-  <video
-    controls
-    src={resolveMediaUrl(post.media)}
-    className="post-media"
-  ></video>
-)}
+  {Array.isArray(post.media) && post.media.map((mediaItem, index) => {
+  if (mediaItem.kind === 'image') {
+    return (
+      <img
+        key={index}
+        src={resolveMediaUrl(mediaItem.url)}
+        alt={`publication-${index}`}
+        className="post-media"
+      />
+    );
+  }
+  if (mediaItem.kind === 'video') {
+    return (
+      <video
+        key={index}
+        src={resolveMediaUrl(mediaItem.url)}
+        controls
+        className="post-media"
+      />
+    );
+  }
+  if (mediaItem.kind === 'audio') {
+    return (
+      <audio
+        key={index}
+        src={resolveMediaUrl(mediaItem.url)}
+        controls
+      />
+    );
+  }
+  return null;
+})}
 
-
-      {post.mediatype === 'audio' && (
-        <audio controls src={resolveMediaUrl(post.media)}></audio>
-      )}
 
      <div className="post-actions">
   <button onClick={() => fetchComments(post.id)}>
@@ -781,42 +824,55 @@ console.log("🧪 Retweets :", retweets);
 
       {/* Auteur de la publication originale */}
       <div className="post-header">
-        <img
-          src={
-            retweet.profilePicture
-              ? `${apiUrl}${retweet.profilePicture}`
-              : '/images/default-profile.png'
-          }
-          alt="Profil"
-          className="profile-picture-comment"
-        />
+       <img
+  src={
+    retweet.profilePicture
+      ? resolveMediaUrl(retweet.profilePicture)
+      : '/images/default-profile.png'
+  }
+  alt="Profil"
+  className="profile-picture-comment"
+/>
+
         <strong>{retweet.username}</strong>
       </div>
 
       {/* Contenu de la publication retweetée */}
-   {retweet.mediatype === 'image' && (
-  <img
-    src={resolveMediaUrl(retweet.media)}
-    alt={retweet.content}
-    className="post-media"
-  />
-)}
-{retweet.mediatype === 'video' && (
-  <video
-    src={resolveMediaUrl(retweet.media)}
-    controls
-    className="post-media"
-  />
-)}
-{retweet.mediatype === 'audio' && (
-  <audio
-    src={resolveMediaUrl(retweet.media)}
-    controls
-    className="post-media"
-  />
-)}
+ <p>{retweet.content}</p>
 
-{!retweet.media && <p>{retweet.content}</p>}
+{Array.isArray(retweet.media) && retweet.media.map((mediaItem, index) => {
+  if (mediaItem.kind === 'image') {
+    return (
+      <img
+        key={index}
+        src={resolveMediaUrl(mediaItem.url)}
+        alt={`retweet-${index}`}
+        className="post-media"
+      />
+    );
+  }
+  if (mediaItem.kind === 'video') {
+    return (
+      <video
+        key={index}
+        src={resolveMediaUrl(mediaItem.url)}
+        controls
+        className="post-media"
+      />
+    );
+  }
+  if (mediaItem.kind === 'audio') {
+    return (
+      <audio
+        key={index}
+        src={resolveMediaUrl(mediaItem.url)}
+        controls
+      />
+    );
+  }
+  return null;
+})}
+
 
 
 

@@ -2,6 +2,8 @@ import React, { useState, useEffect , useCallback  } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import pour la navigation
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
+import './CreateGroup.css';
+
 
 function CreateCommunity({ userId }) {
   const { communityId } = useParams();

@@ -80,7 +80,7 @@ const handleStoryClick = (group) => {
 >
 
       {stories.length === 0 ? (
-        <p>Aucune story disponible</p>
+        <p>aucune storie</p>
       ) : (
        stories.map((group, index) => (
   <div key={index} className="story-circle" onClick={() => handleStoryClick(group)}>

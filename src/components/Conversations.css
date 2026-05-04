@@ -106,7 +106,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-
 .conversation-right {
   display: flex;
   flex-direction: column;

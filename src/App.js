@@ -21,14 +21,22 @@ import Conversations from './components/Conversations';
 import CreateStory from './components/CreateStory';
 import CreatePublication from './components/CreatePublication';
 import StoryPage from './components/StoryPage';
-
+import Invitation from './components/Invitation'; // adapte le chemin si nécessaire
+import Logout from './components/Logout';
+import CreateGroup from './components/CreateGroup';
 const App = () => {
   const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
   const [isAdmin, setIsAdmin] = useState(false); // Indique si l'utilisateur est administrateur
 const [showBanner, setShowBanner] = useState(true);
 const [language, setLanguage] = useState(localStorage.getItem('language') || 'fr');
-const currentUser = JSON.parse(localStorage.getItem('user'));
+const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('user')));
 
+
+const handleLogout = () => {
+  setCurrentUser(null); // réinitialise l'utilisateur
+localStorage.removeItem('user');
+
+};
 
 React.useEffect(() => {
   const timer = setTimeout(() => {
@@ -42,7 +50,9 @@ React.useEffect(() => {
   // Fonction pour gérer la connexion de l'utilisateur et administrateur
   const handleLogin = (userData, isAdminFlag = false) => {
     console.log("[LOG] Utilisateur connecté :", userData);
-    setUser(userData);
+    setCurrentUser(userData);
+setUser(userData); // ✅ synchronise l'état user utilisé dans les routes
+
     setIsAdmin(isAdminFlag);
     console.log("[LOG] ID utilisateur après connexion:", userData?.id);
   };
@@ -63,7 +73,8 @@ React.useEffect(() => {
 
          <Route
   path="/chat/:id"
-  element={user ? <Chat currentUser={user} /> : <Navigate to="/auth" />}
+element={currentUser ? <Chat currentUser={currentUser} /> : <Navigate to="/auth" />}
+
 />
 
 <Route path="/create-story" element={<CreateStory currentUser={user} />} />
@@ -79,6 +90,9 @@ React.useEffect(() => {
   element={user ? <Navigate to={`/profile/${user.id}`} /> : <Navigate to="/auth" />}
 />
 
+{/* 🔥 CHAT GROUPE */}
+  <Route path="/chat/group/:groupId" element={<Chat currentUser={currentUser} />} />
+
 <Route
   path="/notifications"
   element={<Notifications user={user} />}
@@ -87,13 +101,27 @@ React.useEffect(() => {
 
          <Route path="/settings/language" element={<LanguageSettings setLanguage={setLanguage} />} />
 
+<Route
+  path="/invite"
+  element={user ? <Invitation currentUser={user} /> : <Navigate to="/auth" />}
+/>
+{/* 👇 AJOUTER CE BLOC */}
+<Route
+  path="/settings/invitation"
+  element={<Navigate to="/invite" replace />}
+
+
+/>
+
+<Route path="/logout" element={<Logout onLogout={handleLogout} />} />
             {/* Route de téléchargement (publique, avant Auth) */}
           <Route path="/download" element={<Download />} />
 
           {/* Route par défaut vers Auth si l'utilisateur n'est pas connecté */}
           <Route
             path="/"
-            element={user ? <Navigate to="/publication" /> : <Auth onLogin={handleLogin} />}
+           element={currentUser ? <Navigate to="/publication" /> : <Auth onLogin={handleLogin} />}
+
           />
           
 
@@ -107,7 +135,7 @@ React.useEffect(() => {
           />
 
          <Route path="/edit-bio/:id" element={<EditBio currentUser={user} />} />
-
+          <Route path="/groups/create" element={<CreateGroup />} />
 
           {/* Affichage du profil d'un utilisateur spécifique */}
           <Route

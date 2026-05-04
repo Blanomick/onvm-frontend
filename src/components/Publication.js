@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef , useCallback} from 'react';
+  import React, { useState, useEffect, useRef , useCallback} from 'react';
 import axios from 'axios';
 import './Publication.css';
 import MainNavigation from './MainNavigation';
 import AdMultiplex from '../components/AdMultiplex';
 import LogoBar from './LogoBar';
-
+import BottomNav from './BottomNav';
 
 import {
   FaRetweet,
@@ -31,6 +31,53 @@ import { useNavigate } from 'react-router-dom';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
+// --- Lightbox minimaliste (plein écran) ---
+function useLightbox(){
+  const [isOpen, setOpen] = useState(false);
+  const [items, setItems] = useState([]); // [{url, type}]
+  const [index, setIndex] = useState(0);
+
+  const open = useCallback((list, startIndex=0)=>{
+    setItems(list);
+    setIndex(startIndex);
+    setOpen(true);
+    document.body.style.overflow = "hidden";
+  },[]);
+
+  const close = useCallback(()=>{
+    setOpen(false);
+    document.body.style.overflow = "";
+  },[]);
+
+  const next = useCallback(()=> setIndex(i => (i + 1) % items.length), [items.length]);
+  const prev = useCallback(()=> setIndex(i => (i - 1 + items.length) % items.length), [items.length]);
+
+  useEffect(()=>{
+    if(!isOpen) return;
+    const onKey = (e)=>{
+      if(e.key === "Escape") close();
+      if(e.key === "ArrowRight") next();
+      if(e.key === "ArrowLeft") prev();
+    };
+    window.addEventListener("keydown", onKey);
+    return ()=> window.removeEventListener("keydown", onKey);
+  }, [isOpen, next, prev, close]);
+
+  const Lightbox = () => !isOpen ? null : (
+    <div className="media-lightbox" onClick={close}>
+      <button className="close" aria-label="Fermer" onClick={close}>✕</button>
+      {items.length > 1 && <button className="nav left" onClick={(e)=>{e.stopPropagation(); prev();}}>‹</button>}
+      {items.length > 1 && <button className="nav right" onClick={(e)=>{e.stopPropagation(); next();}}>›</button>}
+      <div className="content" onClick={(e)=> e.stopPropagation()}>
+        {items[index]?.type?.startsWith("image")
+          ? <img src={items[index].url} alt="" />
+          : <video src={items[index].url} controls autoPlay playsInline />}
+      </div>
+    </div>
+  );
+
+  return { open, close, next, prev, Lightbox };
+}
 
 
 
@@ -51,10 +98,17 @@ const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [audioBlob, setAudioBlob] = useState(null);
   const [showBottomNav, setShowBottomNav] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
+// index actif par publication pour le carousel
+const [activeSlide, setActiveSlide] = useState({});
+// Refs pour mémoriser le point de départ/déplacement par publication
+const touchStartXRef = useRef({});
+const touchDeltaXRef = useRef({});
 
 
  
   const navigate = useNavigate();
+  const { open, Lightbox } = useLightbox();
+
   const mediaRecorderRef = useRef(null);
   const lastScrollTop = useRef(0);
 
@@ -126,6 +180,64 @@ const fetchPublications = useCallback(async () => {
   }
 }, []);
 
+// Détermine le type à partir de l'URL/extension
+// Récupère un tableau de médias homogène [{url, kind, type}]
+const normalizeMedia = (media) => {
+  const kindFromUrl = (url = "") => {
+    const u = (url || "").toLowerCase();
+    if (/\.(mp4|webm|mov|m4v|ogv)$/.test(u)) return "video";
+    if (/\.(mp3|wav|aac|m4a|ogg|oga|opus)$/.test(u)) return "audio";
+    return "image";
+  };
+
+  const toItem = (m) => {
+    const url = typeof m === "string" ? m : m.url;
+    const k = (typeof m === "object" && m.kind) ? m.kind : kindFromUrl(url);
+    const type = k === "image" ? "image" : k === "video" ? "video" : "audio"; // pour la lightbox
+    return { url, kind: k, type };
+  };
+
+  if (!media) return [];
+  if (typeof media === "string") return [toItem(media)];
+  if (Array.isArray(media)) return media.map(toItem);
+  if (typeof media === "object" && media.url) return [toItem(media)];
+  return [];
+};
+
+
+// Navigation dans le carousel par publication
+const goSlide = (pubId, dir, total) => {
+  setActiveSlide((prev) => {
+    const a = prev[pubId] ?? 0;
+    const n = total || 0;
+    if (n <= 0) return prev;
+    const next = (a + (dir === "next" ? 1 : -1) + n) % n;
+    return { ...prev, [pubId]: next };
+  });
+};
+
+
+// Handlers tactiles par publication (swipe)
+const onTouchStartPub = (pubId) => (e) => {
+  touchStartXRef.current[pubId] = e.touches[0].clientX;
+  touchDeltaXRef.current[pubId] = 0;
+};
+
+const onTouchMovePub = (pubId) => (e) => {
+  const start = touchStartXRef.current[pubId] || 0;
+  touchDeltaXRef.current[pubId] = e.touches[0].clientX - start;
+};
+
+const onTouchEndPub = (pubId, total) => () => {
+  const dx = touchDeltaXRef.current[pubId] || 0;
+  if (dx > 50) {
+    goSlide(pubId, 'prev', total);
+  } else if (dx < -50) {
+    goSlide(pubId, 'next', total);
+  }
+  touchStartXRef.current[pubId] = 0;
+  touchDeltaXRef.current[pubId] = 0;
+};
 
 
 
@@ -367,11 +479,17 @@ const closeShareModal = () => {
             placeholder="Exprimez-vous..."
           ></textarea>
          
-
-         <input
+<input
   type="file"
-  onChange={(e) => setMedia(e.target.files[0])}
+  multiple
   accept="image/*,video/*,audio/*"
+  onChange={(e) => {
+    const list = Array.from(e.target.files || []);
+    if (list.length === 0) return;
+    // Pour rester compatible avec ton backend actuel qui attend 'media' unique ici,
+    // on prend seulement le 1er (tu peux étendre ton backend si tu veux le multi ici aussi)
+    setMedia(list[0]);
+  }}
 />
 
 
@@ -431,23 +549,103 @@ const closeShareModal = () => {
 
   
               {/* Contenu de la publication */}
-              <p>{publication.content}</p>
+            <p className="publication-text">{publication.content}</p>
+
   
-              {/* Médias associés à la publication */}
-              {publication.media && (
- 
- <div className="media">
- {publication.media.endsWith('.mp4') || publication.media.endsWith('.webm') ? (
-   <video src={publication.media} controls />
- ) : publication.media.endsWith('.mp3') || publication.media.endsWith('.ogg') ? (
-   <audio src={publication.media} controls />
- ) : (
-   <img src={publication.media} alt="Publication media" />
- )}
-</div>
+ {/* Médias associés à la publication — supporte 1 ou plusieurs éléments + SWIPE */}
+{/* Médias associés à la publication — carrousel + lightbox */}
+{(() => {
+  const mediaItems = normalizeMedia(publication.media);
+  if (mediaItems.length === 0) return null;
+
+  const idx = activeSlide[publication.id] ?? 0;
+  const lightboxItems = mediaItems.map(m => ({ url: m.url, type: m.type }));
+
+  return (
+    <div className="preview-section ig">
+      {mediaItems.length > 1 && (
+        <button
+          type="button"
+          className="nav left"
+          onClick={() => goSlide(publication.id, 'prev', mediaItems.length)}
+          aria-label="Précédent"
+        >
+          ‹
+        </button>
+      )}
+
+      <div
+        className="frame"
+        onTouchStart={onTouchStartPub(publication.id)}
+        onTouchMove={onTouchMovePub(publication.id)}
+        onTouchEnd={onTouchEndPub(publication.id, mediaItems.length)}
+      >
+        {mediaItems.map((m, i) => (
+          <div
+            key={`${m.url}-${i}`}
+            className={`slide ${i === idx ? 'is-active' : ''}`}
+            style={{ transform: `translateX(${(i - idx) * 100}%)` }}
+          >
+            {m.kind === 'image' && (
+              <img
+                className="media"
+                src={m.url}
+                alt={`media-${i + 1}`}
+                loading="lazy"
+                onClick={() => open(lightboxItems, i)}
+                style={{ cursor: 'zoom-in' }}
+              />
+            )}
+            {m.kind === 'video' && (
+              <video
+                className="media"
+                src={m.url}
+                controls
+                playsInline
+                onClick={() => open(lightboxItems, i)}
+                style={{ cursor: 'zoom-in' }}
+              />
+            )}
+            {m.kind === 'audio' && (
+              <div className="audioWrap">
+                <audio src={m.url} controls />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {mediaItems.length > 1 && (
+        <>
+          <button
+            type="button"
+            className="nav right"
+            onClick={() => goSlide(publication.id, 'next', mediaItems.length)}
+            aria-label="Suivant"
+          >
+            ›
+          </button>
+
+          <div className="dots">
+            {mediaItems.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={`dot ${i === idx ? 'is-on' : ''}`}
+                onClick={() =>
+                  setActiveSlide((prev) => ({ ...prev, [publication.id]: i }))
+                }
+                aria-label={`Aller au média ${i + 1}`}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+})()}
 
 
-)}
 
   <div className="publication-footer">
   <button className="footer-button" onClick={() => handleRetweet(publication.id)}>
@@ -473,7 +671,8 @@ const closeShareModal = () => {
     selectedPublication === publication.id ? null : publication.id
   )}>
     <FaComment />
-    <span>{publication.comments.length}</span>
+   <span>{publication.comments?.length ?? 0}</span>
+
   </button>
 
   <button className="footer-button" onClick={() => handleSharePublication(publication.id)}>
@@ -595,12 +794,15 @@ const closeShareModal = () => {
   <div className="share-modal">
     <h4>Partager la publication</h4>
     <ul>
-      {usersList.map((user) => (
-        <li key={user.id}>
-          {user.username}
-          <button onClick={() => alert(`Partagé avec ${user.username}`)}>Partager</button>
-        </li>
-      ))}
+
+{usersList.map((u) => (
+  <li key={u.id}>
+    {u.username}
+    <button onClick={() => alert(`Partagé avec ${u.username}`)}>Partager</button>
+  </li>
+))}
+
+
     </ul>
     {/* Bouton pour copier le lien */}
     <button onClick={() => copyLink(shareModal)}>
@@ -614,18 +816,7 @@ const closeShareModal = () => {
 
       </div>
   
-      {/* Barre de navigation en bas de la page */}
-      <div className={`bottom-nav ${showBottomNav ? 'visible' : 'hidden'}`}>
-        <FaHome onClick={() => navigate('/')} title="Accueil" />
-        <FaSearch onClick={() => navigate('/search')} title="Recherche" />
-        <FaPlus onClick={() => setShowCreateOptions(true)} title="Créer" />
-
-
-
-
-        <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
-        <FaUser onClick={() => navigate(`/profile/${user?.id}`)} title="Mon profil" />
-      </div>
+     
 
       {/* Icône FaUsers utilisée juste pour éviter le warning ESLint */}
 <div style={{ display: 'none' }}>
@@ -637,12 +828,26 @@ const closeShareModal = () => {
   <div className="create-options-modal">
     <div className="create-options-content">
       <h4>Que souhaitez-vous créer ?</h4>
-      <button onClick={() => navigate('/create-publication')}>Créer une publication</button>
-      <button onClick={() => navigate('/create-story')}>Créer une story</button>
-      <button onClick={() => setShowCreateOptions(false)}>Annuler</button>
+   <button onClick={() => navigate('/create-publication')}>
+  Créer une publication
+</button>
+
+<button onClick={() => navigate('/create-story')}>
+  Créer une story
+</button>
+
+<button onClick={() => navigate('/groups/create')}>
+  Créer un groupe
+</button>
+
+<button onClick={() => setShowCreateOptions(false)}>
+  Annuler
+</button>
     </div>
   </div>
 )}
+<BottomNav />
+<Lightbox />
 
     </div>
   );

@@ -1,82 +1,127 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-
-import { FaHome, FaSearch, FaPlus, FaBell, FaUserCircle } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
-import './BottomNav.css'; // Add some basic styling to position the buttons at the bottom
+import {
+  FaHome,
+  FaPaperPlane,
+  FaPlus,
+  FaHeart,
+  FaUserCircle,
+} from 'react-icons/fa';
+import { useLocation, useNavigate } from 'react-router-dom';
+import './BottomNav.css';
 
 const BottomNav = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [notificationCount, setNotificationCount] = useState(0);
-const user = JSON.parse(localStorage.getItem("user"));
+  const [visible, setVisible] = useState(true);
 
-useEffect(() => {
-  const fetchNotificationCount = async () => {
+  const user = useMemo(() => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/notifications/${user.id}`);
-      setNotificationCount(res.data.length); // ← nombre total (tu peux filtrer par read si tu veux)
-    } catch (err) {
-      console.error("Erreur de chargement des notifications :", err);
+      return JSON.parse(localStorage.getItem('user') || 'null');
+    } catch {
+      return null;
     }
-  };
+  }, []);
 
-  if (user?.id) {
+  useEffect(() => {
+    const fetchNotificationCount = async () => {
+      if (!user?.id) return;
+
+      try {
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_URL}/api/notifications/${user.id}`
+        );
+
+        setNotificationCount(Array.isArray(res.data) ? res.data.length : 0);
+      } catch (err) {
+        console.error('Erreur de chargement des notifications :', err);
+      }
+    };
+
     fetchNotificationCount();
-  }
-}, [user?.id]);
+  }, [user?.id]);
 
+  useEffect(() => {
+    let lastScrollY = window.scrollY;
 
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
 
+      if (currentScrollY > lastScrollY && currentScrollY > 90) {
+        setVisible(false);
+      } else {
+        setVisible(true);
+      }
 
+      lastScrollY = Math.max(currentScrollY, 0);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="bottom-nav">
-      {/* Bouton pour la page des publications */}
-      <button onClick={() => navigate('/publication')} aria-label="Publications">
+    <nav className={`mobile-bottom-nav ${visible ? 'show' : 'hide'}`}>
+      <button
+        type="button"
+        className={`nav-btn ${isActive('/publication') ? 'active' : ''}`}
+        onClick={() => navigate('/publication')}
+        aria-label="Accueil"
+      >
         <FaHome />
       </button>
 
-      {/* Bouton pour la page de recherche */}
-      <button onClick={() => navigate('/search')} aria-label="Recherche">
-        <FaSearch />
+      <button
+        type="button"
+      className={`nav-btn ${isActive('/conversations') ? 'active' : ''}`}
+        onClick={() => navigate('/conversations')}
+        aria-label="Messages"
+      >
+        <FaPaperPlane />
       </button>
 
-      {/* Bouton pour ajouter une nouvelle publication */}
-      <button onClick={() => navigate('/publication')} aria-label="Nouvelle publication">
-
+      <button
+        type="button"
+        className="nav-btn create-btn"
+        onClick={() => navigate('/create-publication')}
+        aria-label="Créer"
+      >
         <FaPlus />
       </button>
 
-{/* Bouton pour les notifications avec compteur */}
-<div style={{ position: 'relative' }}>
-  <button onClick={() => navigate('/notifications')} aria-label="Notifications">
-    <FaBell />
-  </button>
-  {notificationCount > 0 && (
-    <span
-      style={{
-        position: 'absolute',
-        top: '-4px',
-        right: '-4px',
-        backgroundColor: 'red',
-        color: 'white',
-        borderRadius: '50%',
-        fontSize: '10px',
-        padding: '2px 6px',
-        fontWeight: 'bold'
-      }}
-    >
-      {notificationCount}
-    </span>
-  )}
-</div>
+      <button
+        type="button"
+        className={`nav-btn notification-btn ${
+          isActive('/notifications') ? 'active' : ''
+        }`}
+        onClick={() => navigate('/notifications')}
+        aria-label="Activité"
+      >
+        <FaHeart />
 
+        {notificationCount > 0 && (
+          <span className="notification-badge">
+            {notificationCount > 99 ? '99+' : notificationCount}
+          </span>
+        )}
+      </button>
 
-      {/* Bouton pour le profil de l'utilisateur */}
-      <button onClick={() => navigate('/profile')} aria-label="Profil">
+      <button
+        type="button"
+        className={`nav-btn ${
+          location.pathname.startsWith('/profile') ? 'active' : ''
+        }`}
+        onClick={() => navigate(user?.id ? `/profile/${user.id}` : '/profile')}
+        aria-label="Profil"
+      >
         <FaUserCircle />
       </button>
-    </div>
+    </nav>
   );
 };
 

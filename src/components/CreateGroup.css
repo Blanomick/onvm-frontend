@@ -1,0 +1,193 @@
+/* 🔥 GLOBAL PAGE */
+.create-group-page {
+  min-height: 100vh;
+  background: #f8f9fb;
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* 🔥 HEADER STYLE THREADS */
+.create-group-header {
+  height: 64px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.back-button {
+  border: none;
+  background: #f1f1f1;
+  color: #111;
+  font-size: 22px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.create-group-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111;
+}
+
+/* 🔥 FORM CONTAINER */
+.create-group-form {
+  padding: 24px 16px 120px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+/* 🔥 PHOTO */
+.group-photo-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.group-photo-circle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #ececec;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  overflow: hidden;
+  font-size: 32px;
+  transition: 0.2s;
+}
+
+.group-photo-circle:hover {
+  transform: scale(1.05);
+}
+
+.group-photo-circle img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 🔥 INPUT STYLE MOBILE CLEAN */
+input,
+textarea {
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  background: #fff;
+  padding: 14px 16px;
+  font-size: 16px;
+  margin-bottom: 14px;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+}
+
+textarea {
+  min-height: 80px;
+  resize: none;
+}
+
+/* 🔥 SEARCH USERS */
+.user-search-list {
+  max-height: 180px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+
+.user-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.user-item:hover {
+  background: #f3f3f3;
+}
+
+.user-item img {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* 🔥 SELECTED USERS */
+.selected-users {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.selected-user {
+  background: #111;
+  color: #fff;
+  padding: 6px 10px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.selected-user button {
+  border: none;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+/* 🔥 MESSAGE */
+.form-message {
+  text-align: center;
+  color: #e53935;
+  font-weight: 600;
+  margin-top: 10px;
+}
+
+/* 🔥 FLOAT BUTTON STYLE THREADS */
+.create-button {
+  position: fixed;
+  right: 20px;
+  bottom: 24px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  background: #111;
+  color: white;
+  font-size: 0;
+  cursor: pointer;
+
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+  transition: 0.2s;
+}
+
+.create-button:hover {
+  transform: scale(1.05);
+}
+
+.create-button::after {
+  content: "✓";
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.create-button:disabled {
+  opacity: 0.5;
+}

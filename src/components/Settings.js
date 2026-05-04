@@ -49,6 +49,10 @@ const Settings = ({ currentUser }) => {
 </div>
 
 
+             <div className="settings-option" onClick={() => navigate('/settings/invitation')}>
+      🎁 Inviter des amis
+    </div>
+
             <div className="wallet-box">
               <h3>💼 Mon portefeuille</h3>
               <p>Solde actuel : <strong>{balance} €</strong></p>
@@ -59,6 +63,10 @@ const Settings = ({ currentUser }) => {
                 Retirer
               </button>
             </div>
+               
+               <button onClick={() => navigate('/logout')}>
+  Se déconnecter
+</button>
 
             <div className="settings-section">
               <h3>À venir :</h3>
