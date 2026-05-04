@@ -16,13 +16,14 @@ import VoiceMessageBubble from './VoiceMessageBubble';
 import { CallPanel, VoiceNoteButton } from './calls';
 import './Chat.css';
 
-const API_URL = process.env.REACT_APP_API_URL;
+const apiUrl = process.env.REACT_APP_API_URL;
+const socketUrl = process.env.REACT_APP_WEBSOCKET_URL || apiUrl;
 
-if (!API_URL) {
+if (!apiUrl) {
   console.error("❌ REACT_APP_API_URL manquant !");
 }
 
-const socket = io(API_URL, {
+const socket = io(socketUrl, {
   transports: ["websocket", "polling"],
   withCredentials: true,
 });
