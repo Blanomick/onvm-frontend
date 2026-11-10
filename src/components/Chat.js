@@ -144,24 +144,88 @@ const Chat = ({ currentUser }) => {
     }
   }, [conversationId, currentGroupId, currentUser?.id, isGroup]);
 
-  useEffect(() => {
-    if (!isGroup || !currentGroupId) return;
+useEffect(() => {
+  if (!currentUser?.id || (!conversationId && !currentGroupId)) {
+    return;
+  }
 
-    const fetchMembers = async () => {
-      try {
-        const res = await fetch(`${apiUrl}/api/groups/${currentGroupId}/members`);
-        const data = await res.json();
+  let active = true;
+  let fetching = false;
+  const controller = new AbortController();
 
-        if (Array.isArray(data)) {
-          setGroupMembers(data);
-        }
-      } catch (err) {
-        console.error('[ERREUR] Chargement membres groupe :', err);
+  const fetchMessages = async () => {
+    if (fetching || document.hidden) return;
+    fetching = true;
+
+    try {
+      const url = isGroup
+        ? `${apiUrl}/api/messages/group/${currentGroupId}`
+        : `${apiUrl}/api/messages/${conversationId}?withUser=1&viewerId=${currentUser.id}`;
+
+      const response = await fetch(url, {
+        signal: controller.signal,
+        cache: "no-store",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Chargement impossible : ${response.status}`);
       }
-    };
 
-    fetchMembers();
-  }, [currentGroupId, isGroup]);
+      const data = await response.json();
+      const items = Array.isArray(data) ? data : data.messages;
+
+      if (!Array.isArray(items)) {
+        throw new Error("Réponse de messagerie invalide.");
+      }
+
+      if (!active) return;
+
+      setMessages(
+        items.map((message) =>
+          normalizeMessage({
+            ...message,
+            sender_id: message.sender_id ?? message.user_id,
+          })
+        )
+      );
+
+      if (data.user) {
+        setChatUser(data.user);
+      }
+
+      if (data.group) {
+        setChatUser({
+          id: data.group.id,
+          username: data.group.name,
+          profilePicture: data.group.profile_photo,
+        });
+      }
+    } catch (error) {
+      if (active && error.name !== "AbortError") {
+        console.error("[MESSAGES] Actualisation :", error);
+      }
+
+      // Conserver les messages déjà affichés en cas de problème réseau.
+    } finally {
+      fetching = false;
+    }
+  };
+
+  fetchMessages();
+
+  const interval = window.setInterval(fetchMessages, 3000);
+
+  window.addEventListener("focus", fetchMessages);
+  document.addEventListener("visibilitychange", fetchMessages);
+
+  return () => {
+    active = false;
+    controller.abort();
+    window.clearInterval(interval);
+    window.removeEventListener("focus", fetchMessages);
+    document.removeEventListener("visibilitychange", fetchMessages);
+  };
+}, [conversationId, currentGroupId, currentUser?.id, isGroup]);
 
   const scrollToBottom = () => {
     setTimeout(() => {

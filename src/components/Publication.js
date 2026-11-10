@@ -3,7 +3,7 @@ import axios from 'axios';
 import './Publication.css';
 import MainNavigation from './MainNavigation';
 import AdMultiplex from '../components/AdMultiplex';
-import LogoBar from './LogoBar';
+import { useNavigate, useLocation } from "react-router-dom";
 import BottomNav from './BottomNav';
 
 import {
@@ -25,7 +25,7 @@ import {
 
   FaUsers,
 } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+
 
 
 
@@ -85,6 +85,8 @@ function useLightbox(){
 
 const Publication = ({ user }) => {
   const [publications, setPublications] = useState([]);
+  const [viewMode, setViewMode] = useState('feed');
+const [shortIndex, setShortIndex] = useState(0);
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
   const [retweets, setRetweets] = useState({}); 
@@ -107,6 +109,27 @@ const touchDeltaXRef = useRef({});
 
  
   const navigate = useNavigate();
+
+
+const location = useLocation();
+
+const targetPostId = new URLSearchParams(location.search).get("post");
+
+useEffect(() => {
+  if (!targetPostId || !publications.length) return;
+
+  const frame = window.requestAnimationFrame(() => {
+    document
+      .getElementById(`publication-${targetPostId}`)
+      ?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+  });
+
+  return () => window.cancelAnimationFrame(frame);
+}, [targetPostId, publications]);
+
   const { open, Lightbox } = useLightbox();
 
   const mediaRecorderRef = useRef(null);
@@ -182,28 +205,71 @@ const fetchPublications = useCallback(async () => {
 
 // Détermine le type à partir de l'URL/extension
 // Récupère un tableau de médias homogène [{url, kind, type}]
-const normalizeMedia = (media) => {
-  const kindFromUrl = (url = "") => {
-    const u = (url || "").toLowerCase();
-    if (/\.(mp4|webm|mov|m4v|ogv)$/.test(u)) return "video";
-    if (/\.(mp3|wav|aac|m4a|ogg|oga|opus)$/.test(u)) return "audio";
-    return "image";
-  };
+const normalizeMedia = (value) => {
+  if (!value) return [];
 
-  const toItem = (m) => {
-    const url = typeof m === "string" ? m : m.url;
-    const k = (typeof m === "object" && m.kind) ? m.kind : kindFromUrl(url);
-    const type = k === "image" ? "image" : k === "video" ? "video" : "audio"; // pour la lightbox
-    return { url, kind: k, type };
-  };
+  let parsed = value;
 
-  if (!media) return [];
-  if (typeof media === "string") return [toItem(media)];
-  if (Array.isArray(media)) return media.map(toItem);
-  if (typeof media === "object" && media.url) return [toItem(media)];
-  return [];
+  if (
+  typeof value === 'string' &&
+  (value.trim().startsWith('[') || value.trim().startsWith('{'))
+) {
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      return [];
+    }
+  }
+
+  const entries = Array.isArray(parsed) ? parsed : [parsed];
+
+  return entries
+    .map((entry) => {
+      const originalUrl =
+        typeof entry === 'string' ? entry : entry?.url;
+
+      if (!originalUrl) return null;
+
+      const url = originalUrl.startsWith('/uploads/')
+        ? `${apiUrl}${originalUrl}`
+        : originalUrl;
+
+      const pathname = url.split(/[?#]/)[0].toLowerCase();
+      const declaredType =
+        typeof entry === 'object' ? entry.kind || entry.type : '';
+
+      let kind = 'image';
+
+      if (declaredType?.startsWith('audio')) {
+        kind = 'audio';
+      } else if (declaredType?.startsWith('video')) {
+        kind = 'video';
+      } else if (declaredType?.startsWith('image')) {
+        kind = 'image';
+      } else if (/\.(mp4|webm|mov|m4v|ogv|avi)$/.test(pathname)) {
+        kind = 'video';
+      } else if (/\.(mp3|wav|aac|m4a|ogg|oga|opus)$/.test(pathname)) {
+        kind = 'audio';
+      }
+
+      return { url, kind, type: kind };
+    })
+    .filter(Boolean);
 };
 
+const videoPublications = publications.filter((publication) =>
+  normalizeMedia(publication.media).some((item) => item.kind === 'video')
+);
+
+const currentShortIndex = Math.min(
+  shortIndex,
+  Math.max(videoPublications.length - 1, 0)
+);
+
+const displayedPublications =
+  viewMode === 'shorts'
+    ? videoPublications.slice(currentShortIndex, currentShortIndex + 1)
+    : publications;
 
 // Navigation dans le carousel par publication
 const goSlide = (pubId, dir, total) => {
@@ -463,47 +529,52 @@ const closeShareModal = () => {
   
   
   return (
-    <div className="publication-page">
+   <div
+  className={`publication-page onvm-redesign ${
+    viewMode === 'shorts' ? 'onvm-shorts-mode' : ''
+  }`}
+>
+ 
+  
+  
+  
+  {viewMode === 'shorts' && videoPublications.length > 0 && (
+    <div className="onvm-short-controls">
+      <button
+        disabled={currentShortIndex === 0}
+        onClick={() => setShortIndex(currentShortIndex - 1)}
+      >
+        ← Précédente
+      </button>
 
-      <LogoBar /> 
+      <span>
+        {currentShortIndex + 1} / {videoPublications.length}
+      </span>
+
+      <button
+        disabled={currentShortIndex >= videoPublications.length - 1}
+        onClick={() => setShortIndex(currentShortIndex + 1)}
+      >
+        Suivante →
+      </button>
+    </div>
+  )}
      
       {/* Menu coulissant */}
       {showMenu && <MainNavigation onClose={toggleMenu} />}
   
       {/* Formulaire de création de publication */}
-      {isCreating && (
-        <form onSubmit={handlePublication} className="publication-form">
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="Exprimez-vous..."
-          ></textarea>
-         
-<input
-  type="file"
-  multiple
-  accept="image/*,video/*,audio/*"
-  onChange={(e) => {
-    const list = Array.from(e.target.files || []);
-    if (list.length === 0) return;
-    // Pour rester compatible avec ton backend actuel qui attend 'media' unique ici,
-    // on prend seulement le 1er (tu peux étendre ton backend si tu veux le multi ici aussi)
-    setMedia(list[0]);
-  }}
-/>
-
-
-          <button type="submit">Publier</button>
-        </form>
-      )}
-  
+     
       {/* Liste des publications */}
       <div className="publications-list">
-        {publications.length > 0 ? (
-        publications.map((publication, i) => (
-         
-
-            <div key={publication.id} className="publication">
+      {displayedPublications.length > 0 ? (
+  displayedPublications.map((publication, i) => (
+    <div
+      key={`${viewMode}-${publication.id}`}
+      className={`publication ${
+        viewMode === 'shorts' ? 'publication--short' : ''
+      }`}
+    >
 {/* En-tête de la publication */}
 <div className="publication-header">
   {/* Vérification et affichage de la photo de profil */}
@@ -555,7 +626,9 @@ const closeShareModal = () => {
  {/* Médias associés à la publication — supporte 1 ou plusieurs éléments + SWIPE */}
 {/* Médias associés à la publication — carrousel + lightbox */}
 {(() => {
-  const mediaItems = normalizeMedia(publication.media);
+  const mediaItems = normalizeMedia(publication.media).filter(
+  (item) => viewMode !== 'shorts' || item.kind === 'video'
+);
   if (mediaItems.length === 0) return null;
 
   const idx = activeSlide[publication.id] ?? 0;
@@ -597,14 +670,20 @@ const closeShareModal = () => {
               />
             )}
             {m.kind === 'video' && (
-              <video
-                className="media"
-                src={m.url}
-                controls
-                playsInline
-                onClick={() => open(lightboxItems, i)}
-                style={{ cursor: 'zoom-in' }}
-              />
+            <video
+  key={`${viewMode}-${m.url}-${idx}`}
+  className="media"
+  src={m.url}
+  controls
+  playsInline
+  preload="metadata"
+  autoPlay={viewMode === 'shorts' && i === idx}
+  muted={viewMode === 'shorts'}
+  loop={viewMode === 'shorts'}
+  ref={(element) => {
+    if (element && i !== idx) element.pause();
+  }}
+/>
             )}
             {m.kind === 'audio' && (
               <div className="audioWrap">
@@ -775,11 +854,11 @@ const closeShareModal = () => {
 
 
 
-{(i + 1) % 4 === 0 && (
+{viewMode === 'feed' && (i + 1) % 4 === 0 && (
   <div className="publication ad-publication">
    <div className="ad-content">
      <span className="ad-label">bonus </span>
-    <AdMultiplex />
+   {/* Publicité désactivée temporairement pour le diagnostic */}
      </div>
   </div>
 )}
@@ -788,7 +867,19 @@ const closeShareModal = () => {
             </div>
           ))
         ) : (
-          <p>Aucune publication disponible.</p>
+          <div className="onvm-empty">
+  <h2>
+    {viewMode === 'shorts'
+      ? 'Les vidéos arrivent ici.'
+      : 'La conversation commence avec toi.'}
+  </h2>
+  <p>
+    {viewMode === 'shorts'
+      ? 'Publie une vidéo pour la retrouver dans ONVM Shorts.'
+      : 'Partage une idée, une photo ou un moment.'}
+  </p>
+  
+</div>
         )}
 {shareModal && (
   <div className="share-modal">
@@ -824,28 +915,7 @@ const closeShareModal = () => {
 </div>
 
 
-{showCreateOptions && (
-  <div className="create-options-modal">
-    <div className="create-options-content">
-      <h4>Que souhaitez-vous créer ?</h4>
-   <button onClick={() => navigate('/create-publication')}>
-  Créer une publication
-</button>
 
-<button onClick={() => navigate('/create-story')}>
-  Créer une story
-</button>
-
-<button onClick={() => navigate('/groups/create')}>
-  Créer un groupe
-</button>
-
-<button onClick={() => setShowCreateOptions(false)}>
-  Annuler
-</button>
-    </div>
-  </div>
-)}
 <BottomNav />
 <Lightbox />
 

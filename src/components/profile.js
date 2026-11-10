@@ -10,7 +10,12 @@ import axios from 'axios'; // ✅ nécessaire pour handleComment
 import { FiSettings } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 
-
+import {
+  FiArrowLeft,
+  FiCamera,
+  FiEdit2,
+  FiMessageCircle,
+} from 'react-icons/fi';
 const apiUrl = process.env.REACT_APP_API_URL;
 
 const normalizeMedia = (media, kind = 'image') => {
@@ -31,10 +36,17 @@ const normalizeMedia = (media, kind = 'image') => {
 
 
 const resolveMediaUrl = (url) => {
-  if (!url) return '';
-  return url.startsWith('http') ? url : `${apiUrl}/${url.replace(/\\/g, '/')}`;
-};
+  if (typeof url !== 'string' || !url.trim()) return '';
 
+  const cleaned = url.trim().replace(/\\/g, '/');
+
+  if (/^https?:\/\//i.test(cleaned)) {
+    return cleaned;
+  }
+
+  const base = (apiUrl || '').replace(/\/+$/, '');
+  return `${base}/${cleaned.replace(/^\/+/, '')}`;
+};
 
 
 
@@ -42,6 +54,12 @@ const Profile = ({ currentUser }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [profileUser, setProfileUser] = useState(null);
+
+  const [profileImageFailed, setProfileImageFailed] = useState(false);
+
+useEffect(() => {
+  setProfileImageFailed(false);
+}, [profileUser?.profilePicture]);
    const [ bio, setBio] = useState('Bienvenue sur mon profil!'); 
   const [followerCount, setFollowerCount] = useState(0);
   const [posts, setPosts] = useState([]);
@@ -58,8 +76,7 @@ const Profile = ({ currentUser }) => {
   const [extraData, setExtraData] = useState(null); // Ajoutez cet état pour stocker les données supplémentaires
   const [response, setResponse] = useState(null);
   const [activeTab, setActiveTab] = useState('publications'); // Onglet actif : 'publications' ou 'retweets'
-  const [showBottomNav, setShowBottomNav] = useState(true); // Par défaut, la barre est visible
-  const [lastScrollY, setLastScrollY] = useState(0);
+ 
   const [likes, setLikes] = useState({});
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const fileInputRef = React.useRef(null);
@@ -378,13 +395,17 @@ const handleMessageClick = async () => {
   };
   
   const handleViewProfilePicture = () => {
-    if (profileUser?.profilePicture) {
-      window.open(`${apiUrl}${profileUser.profilePicture}`, '_blank');
-    } else {
-      alert("Aucune photo de profil.");
-    }
-  };
-  
+  if (!profileUser?.profilePicture) {
+    alert('Aucune photo de profil.');
+    return;
+  }
+
+  const imageUrl = resolveMediaUrl(profileUser.profilePicture);
+
+  if (imageUrl) {
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  }
+};
   const handleOpenFilePicker = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
@@ -488,25 +509,7 @@ const handleComment = async (publicationId) => {
 
 
 
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-  
-      if (currentScrollY > lastScrollY) {
-        setShowBottomNav(false); // L'utilisateur descend => on cache
-      } else {
-        setShowBottomNav(true); // L'utilisateur monte => on montre
-      }
-  
-      setLastScrollY(currentScrollY);
-    };
-  
-    window.addEventListener('scroll', handleScroll);
-  
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
-  
-
+ 
 
 
 console.log("🧪 Profil :", profileUser);
@@ -516,171 +519,239 @@ console.log("🧪 Retweets :", retweets);
 
 
   return (
-    <div className="profile-container">
+   <div className="profile-container onvm-profile">
       {profileUser ? (
 
         <>
 
-       {isOwner && (
-  <div className="settings-icon" onClick={() => navigate('/settings')}>
-    <FiSettings size={28} title="Paramètres" />
-  </div>
-)}
-
-
-              <div className="profile-header">
-  <div className="profile-left">
-    <div className="profile-picture-section">
-     <img
-  src={
-    profileUser.profilePicture
-      ? resolveMediaUrl(profileUser.profilePicture)
-      : '/images/default-profile.png'
-  }
-  alt="Profile"
-  className="profile-picture"
-  onClick={isOwner ? handleProfilePictureClick : undefined}
-/>
-
-
-      {isOwner && (
-        <>
-          <input
-            type="file"
-            ref={fileInputRef}
-            style={{ display: 'none' }}
-            accept="image/*"
-            onChange={handleFileChange}
-          />
-
-              {newProfileImage && (
-      <div className="cropper-section">
-        <Cropper
-          style={{ height: 300, width: '100%' }}
-          initialAspectRatio={1}
-          src={newProfileImage}
-          viewMode={1}
-          guides={false}
-          minCropBoxHeight={10}
-          minCropBoxWidth={10}
-          background={false}
-          responsive={true}
-          autoCropArea={1}
-          checkOrientation={false}
-          onInitialized={(instance) => {
-            setCropper(instance);
-          }}
-        />
-        <button onClick={handleProfileImageSave} style={{ marginTop: '10px' }}>
-          Enregistrer la photo
-        </button>
-      </div>
-    )}
-
-          {showProfileMenu && (
-            <div className="profile-picture-menu">
-              <button onClick={handleViewProfilePicture}>Voir la photo</button>
-              <button onClick={handleOpenFilePicker}>Changer la photo</button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  </div>
-
-        
-
-  <div className="profile-details">
-    <h2 className="profile-username">{profileUser?.username || 'Nom indisponible'}</h2>
-
-    <div className="profile-stats">
-      <div><strong>{posts.length}</strong><span> publications</span></div>
-      <div className={`follower-count ${animateFollower ? 'pop' : ''}`}>
-  <strong>{followerCount}</strong><span> abonnés</span>
-</div>
-
-      <div><strong>{profileUser?.followingCount || 0}</strong><span> suivis</span></div>
-    </div>
-
-   {!isOwner && (
-  <button onClick={handleFollow}>
-    {isFollowing ? 'Se désabonner' : 'Suivre'}
+ <div className="onvm-profile-toolbar">
+  <button
+    type="button"
+    className="onvm-profile-icon-button"
+    onClick={() => navigate('/publication')}
+    aria-label="Retour au fil"
+  >
+    <FiArrowLeft size={22} />
   </button>
-)}
 
-  </div>
-</div>
-
-
-  <div className="profile-bio">
-  <p>{profileUser.bio || 'Cet utilisateur n\'a pas encore de biographie.'}</p>
-</div>
-
-         
-  
-     
-
-{extraData && (
-  <div style={{ display: 'none' }}>
-    {JSON.stringify(extraData)}
-  </div>
-)}
-
-  
-      <div className="actions-section">
-    <div className="actions-section">
-  {isOwner ? (
-    <>
-      <button
-  className="action-button live-button"
-  onClick={() => alert("🚫 Vous n'êtes pas encore autorisé(e) à faire des lives.")}
-  style={{
-    backgroundColor: '#ccc',
-    cursor: 'not-allowed',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-  }}
->
-  <FaLock /> Live (bientôt)
-</button>
-
-
- <button
-        className="action-button messages-button"
-        onClick={() => navigate('/conversations')}
-      >
-        💬 Mes Messages
-      </button>
-
-    </>
-  ) : (
-    <button className="custom-message-button" onClick={handleMessageClick}>
-  💬 Message
-</button>
-
+  {isOwner && (
+    <button
+      type="button"
+      className="onvm-profile-icon-button"
+      onClick={() => navigate('/settings')}
+      aria-label="Paramètres du compte"
+    >
+      <FiSettings size={21} />
+    </button>
   )}
 </div>
 
+<section className="onvm-profile-identity">
+  <div className="onvm-profile-avatar-area">
+    <button
+      type="button"
+      className="onvm-profile-avatar-button"
+      onClick={
+        isOwner
+          ? handleProfilePictureClick
+          : handleViewProfilePicture
+      }
+      aria-label={
+        isOwner
+          ? 'Gérer ma photo de profil'
+          : 'Voir la photo de profil'
+      }
+      aria-expanded={isOwner ? showProfileMenu : undefined}
+    >
+      {profileUser.profilePicture && !profileImageFailed ? (
+        <img
+          src={resolveMediaUrl(profileUser.profilePicture)}
+          alt={profileUser.username || 'Membre ONVM'}
+          onError={() => setProfileImageFailed(true)}
+        />
+      ) : (
+        <span className="onvm-profile-initial">
+          {(profileUser.username || 'O').slice(0, 1).toUpperCase()}
+        </span>
+      )}
 
+      {isOwner && (
+        <span className="onvm-profile-camera" aria-hidden="true">
+          <FiCamera size={15} />
+        </span>
+      )}
+    </button>
 
-   
-      
+    {isOwner && (
+      <>
+        <input
+          type="file"
+          ref={fileInputRef}
+          hidden
+          accept="image/*"
+          onChange={(event) => {
+            handleFileChange(event);
+            setShowProfileMenu(false);
+            event.target.value = '';
+          }}
+        />
 
+        {showProfileMenu && (
+          <div className="onvm-profile-photo-menu">
+            <button
+              type="button"
+              onClick={() => {
+                handleViewProfilePicture();
+                setShowProfileMenu(false);
+              }}
+            >
+              Voir la photo
+            </button>
 
-              {transactions.length > 0 && (
-  <div className="wallet-history">
-    <h4>Historique des transactions</h4>
-    <ul>
-      {transactions.map((tx, index) => (
-        <li key={index}>{tx.type} de {tx.amount}€</li>
-      ))}
-    </ul>
+            <button
+              type="button"
+              onClick={() => {
+                setShowProfileMenu(false);
+                handleOpenFilePicker();
+              }}
+            >
+              Changer la photo
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowProfileMenu(false)}
+            >
+              Fermer
+            </button>
+          </div>
+        )}
+      </>
+    )}
   </div>
+
+  <h1 className="onvm-profile-name">
+    {profileUser.username || 'Membre ONVM'}
+  </h1>
+
+  <p className="onvm-profile-bio">
+    {profileUser.bio ||
+      (isOwner
+        ? 'Quelques mots sur toi, ce qui t’anime, ce que tu partages.'
+        : 'Cette personne n’a pas encore ajouté de biographie.')}
+  </p>
+
+  <div className="onvm-profile-statistics">
+    <div>
+      <strong>{posts.length}</strong>
+      <span>Publications</span>
+    </div>
+
+    <div>
+      <strong>{followerCount}</strong>
+      <span>Abonnés</span>
+    </div>
+
+    <div>
+      <strong>{profileUser.followingCount || 0}</strong>
+      <span>Abonnements</span>
+    </div>
+  </div>
+
+  <div className="onvm-profile-buttons">
+    {isOwner ? (
+      <button
+        type="button"
+        className="onvm-profile-edit"
+        onClick={() => navigate(`/edit-bio/${profileUser.id}`)}
+      >
+        <FiEdit2 size={16} />
+        <span>Modifier le profil</span>
+      </button>
+    ) : (
+      <>
+        <button
+          type="button"
+          className={`onvm-profile-follow ${
+            isFollowing ? 'is-following' : ''
+          }`}
+          onClick={handleFollow}
+        >
+          <span>{isFollowing ? 'Se désabonner' : 'Suivre'}</span>
+        </button>
+
+        <button
+          type="button"
+          className="onvm-profile-message"
+          onClick={handleMessageClick}
+        >
+          <FiMessageCircle size={17} />
+          <span>Message</span>
+        </button>
+      </>
+    )}
+  </div>
+</section>
+
+{isOwner && newProfileImage && (
+  <section
+    className="onvm-profile-crop"
+    aria-labelledby="onvm-crop-title"
+  >
+    <div className="onvm-profile-crop-heading">
+      <h2 id="onvm-crop-title">Ajuster la photo</h2>
+
+      <button
+        type="button"
+        onClick={() => {
+          setNewProfileImage(null);
+          setCropper(null);
+        }}
+      >
+        Annuler
+      </button>
+    </div>
+
+    <Cropper
+      style={{ height: 320, width: '100%' }}
+      src={newProfileImage}
+      aspectRatio={1}
+      initialAspectRatio={1}
+      viewMode={1}
+      guides={false}
+      minCropBoxHeight={40}
+      minCropBoxWidth={40}
+      background={false}
+      responsive
+      autoCropArea={1}
+      checkOrientation={false}
+      onInitialized={(instance) => setCropper(instance)}
+    />
+
+    <button
+      type="button"
+      className="onvm-profile-save-photo"
+      onClick={handleProfileImageSave}
+    >
+      Enregistrer la photo
+    </button>
+  </section>
 )}
 
-            </div>
-          
+{isOwner && transactions.length > 0 && (
+  <details className="onvm-profile-transactions">
+    <summary>Historique de mon portefeuille</summary>
+
+    <ul>
+      {transactions.map((transaction, index) => (
+        <li key={transaction.id || index}>
+          <span>{transaction.type}</span>
+          <strong>{transaction.amount}</strong>
+        </li>
+      ))}
+    </ul>
+  </details>
+)}
   
   
   
@@ -690,19 +761,19 @@ console.log("🧪 Retweets :", retweets);
                 className={`tab-button ${activeTab === 'publications' ? 'active' : ''}`}
                 onClick={() => setActiveTab('publications')}
               >
-                Mes Publications
+                Publications
               </button>
               <button
                 className={`tab-button ${activeTab === 'retweets' ? 'active' : ''}`}
                 onClick={() => setActiveTab('retweets')}
               >
-                Mes Retweets
+                Republications
               </button>
             </div>
   
             {activeTab === 'publications' && (
               <>
-                <h3>Mes publications</h3>
+                
 
 
                 {posts.length > 0 ? (
@@ -816,7 +887,7 @@ console.log("🧪 Retweets :", retweets);
   
   {activeTab === 'retweets' && (
   <div className="retweets-section">
-    <h3>Mes retweets</h3>
+    <h3>Republications</h3>
    
 {retweets.length > 0 ? (
   retweets.map((retweet) => (
@@ -877,13 +948,16 @@ console.log("🧪 Retweets :", retweets);
 
 
       {/* Bouton de suppression */}
-      <button
-        className="delete-button"
-        onClick={() => handleDeleteRetweet(retweet.id)}
-        title="Supprimer ce retweet"
-      >
-        ✖
-      </button>
+     {isOwner && (
+  <button
+    type="button"
+    className="delete-button"
+    onClick={() => handleDeleteRetweet(retweet.id)}
+    aria-label="Retirer cette republication"
+  >
+    ✖
+  </button>
+)}
 
       {/* Actions */}
       <div className="post-actions">
@@ -949,18 +1023,9 @@ console.log("🧪 Retweets :", retweets);
 
  
 {/* Navigation en bas de page */}
-<div className={`bottom-nav ${showBottomNav ? 'visible' : 'hidden'}`}>
-  <FaHome onClick={() => navigate('/')} title="Accueil" />
-  <FaSearch onClick={() => navigate('/search')} title="Recherche" />
-  <FaPlus onClick={() => navigate('/publication')} title="Créer une publication" />
 
-  <FaBell onClick={() => navigate('/notifications')} title="Notifications" />
-  <FaUser onClick={() => navigate(`/profile/${currentUser?.id}`)} title="Mon profil" />
-</div>
-    
 
-{/* Utilisation de BottomNav pour éviter le warning */}
-{showBottomNav && <BottomNav />}
+<BottomNav />
 
 {/* Icône utilisée uniquement pour éviter le warning ESLint */}
 <div style={{ display: 'none' }}>

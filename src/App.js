@@ -24,18 +24,31 @@ import StoryPage from './components/StoryPage';
 import Invitation from './components/Invitation'; // adapte le chemin si nécessaire
 import Logout from './components/Logout';
 import CreateGroup from './components/CreateGroup';
+
+function readSavedUser() {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    const token = localStorage.getItem("token");
+
+    return user?.id && token ? user : null;
+  } catch {
+    return null;
+  }
+}
 const App = () => {
-  const [user, setUser] = useState(null); // Stocke l'utilisateur connecté
+  const [user, setUser] = useState(readSavedUser); // Stocke l'utilisateur connecté
   const [isAdmin, setIsAdmin] = useState(false); // Indique si l'utilisateur est administrateur
 const [showBanner, setShowBanner] = useState(true);
 const [language, setLanguage] = useState(localStorage.getItem('language') || 'fr');
-const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('user')));
+const currentUser = user;
 
 
-const handleLogout = () => {
-  setCurrentUser(null); // réinitialise l'utilisateur
-localStorage.removeItem('user');
+ const handleLogout = () => {
+  localStorage.removeItem("user");
+  localStorage.removeItem("token");
 
+  setUser(null);
+  setIsAdmin(false);
 };
 
 React.useEffect(() => {
@@ -48,14 +61,11 @@ React.useEffect(() => {
 
 
   // Fonction pour gérer la connexion de l'utilisateur et administrateur
-  const handleLogin = (userData, isAdminFlag = false) => {
-    console.log("[LOG] Utilisateur connecté :", userData);
-    setCurrentUser(userData);
-setUser(userData); // ✅ synchronise l'état user utilisé dans les routes
-
-    setIsAdmin(isAdminFlag);
-    console.log("[LOG] ID utilisateur après connexion:", userData?.id);
-  };
+ const handleLogin = (userData, isAdminFlag = false) => {
+  localStorage.setItem("user", JSON.stringify(userData));
+  setUser(userData);
+  setIsAdmin(isAdminFlag);
+};
 
   return (
     <Router>
@@ -144,10 +154,16 @@ element={currentUser ? <Chat currentUser={currentUser} /> : <Navigate to="/auth"
           />
 
           {/* Page de publication */}
-          <Route
-            path="/publication"
-            element={user ? <Publication user={user} /> : <Navigate to="/auth" />}
-          />
+       <Route
+  path="/publication"
+  element={
+    user ? (
+      <Publication user={user} />
+    ) : (
+      <Navigate to="/auth" />
+    )
+  }
+/>
 
           {/* Page d'authentification pour les administrateurs */}
           <Route
