@@ -1093,185 +1093,331 @@ body {
   }
 }
 
-/* ONVM — fil fluide, sans cadres ni séparateurs */
 
-.publication-page {
+
+/* ONVM — publications compactes, sans séparateurs */
+
+.publication-page.onvm-refined {
+  min-height: 100dvh;
+  margin: 0;
+  padding: 10px 0 calc(110px + env(safe-area-inset-bottom));
   background: #fff;
-  color: #161616;
-  padding: 8px 0 calc(110px + env(safe-area-inset-bottom));
+  color: #171719;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.publication-page .publications-list {
+.publication-page.onvm-refined .publications-list {
   width: 100%;
-  max-width: 600px;
+  max-width: 620px;
   margin: 0 auto;
   padding: 0;
+  border: 0;
   background: #fff;
-  border: none;
 }
 
-/* L’espace blanc sépare les publications */
-.publication-page .publication {
-  width: 100%;
-  margin: 0 0 24px;
-  padding: 0;
-  background: #fff;
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-}
+/* Avatar à gauche, contenu à droite */
+.publication-page.onvm-refined .publication {
+  --avatar-size: 38px;
+  --avatar-gap: 10px;
 
-/* Auteur */
-.publication-page .publication-header {
   display: grid;
-  grid-template-columns: 40px minmax(0, 1fr) 28px;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  grid-template-columns: var(--avatar-size) minmax(0, 1fr);
+  column-gap: var(--avatar-gap);
+  width: 100%;
+  margin: 0;
+  padding: 12px 14px 22px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  overflow: visible;
+  scroll-margin-top: 20px;
 }
 
-.publication-page .publication-profile-picture {
+.publication-page.onvm-refined .publication-header {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: var(--avatar-size) minmax(0, 1fr) 28px;
+  align-items: start;
+  gap: var(--avatar-gap);
+  min-height: 38px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.publication-page.onvm-refined .publication-profile-picture {
   display: block;
-  width: 40px;
-  height: 40px;
+  width: var(--avatar-size);
+  height: var(--avatar-size);
+  margin: 0;
+  border: 0;
   border-radius: 50%;
   object-fit: cover;
-  background: #f3f3f3;
+  background: #f1f1f3;
 }
 
-.publication-page .publication-info h3,
-.publication-page .clickable-username {
+.publication-page.onvm-refined .publication-info {
+  min-width: 0;
+  padding-top: 1px;
+}
+
+.publication-page.onvm-refined .publication-info h3 {
   margin: 0;
-  color: #161616;
+  color: #171719;
   font-size: 15px;
   font-weight: 650;
   line-height: 1.3;
+  letter-spacing: -0.2px;
   overflow-wrap: anywhere;
 }
 
-.publication-page .publication-info span {
+.publication-page.onvm-refined .publication-info span {
   display: block;
-  margin-top: 3px;
-  color: #898989;
-  font-size: 12px;
+  margin-top: 2px;
+  color: #929296;
+  font-size: 11px;
   line-height: 1.3;
 }
 
-.publication-page .delete-icon {
-  margin: 0;
+.publication-page.onvm-refined .delete-icon {
   justify-self: end;
-  color: #888;
-  font-size: 17px;
+  margin: 3px 0 0;
+  color: #a0a0a5;
+  font-size: 16px;
 }
 
-/* Texte aligné avec les bords du fil */
-.publication-page .publication-text {
+/* Même alignement pour le texte, les médias et les actions */
+.publication-page.onvm-refined .onvm-post-copy,
+.publication-page.onvm-refined .onvm-post-media,
+.publication-page.onvm-refined .publication-footer,
+.publication-page.onvm-refined .comments-section {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* Texte et bouton Lire la suite */
+.publication-page.onvm-refined .onvm-post-copy {
+  margin: 4px 0 0;
+}
+
+.publication-page.onvm-refined .publication-text {
+  display: block;
   margin: 0;
-  padding: 0 14px 12px;
-  color: #202020;
+  padding: 0;
+  color: #252528;
   font-size: 15px;
-  line-height: 1.55;
+  font-weight: 400;
+  line-height: 1.48;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
-/* Médias pleine largeur, sans décalage sous l’avatar */
-.publication-page .preview-section.ig {
-  position: relative;
+.publication-page.onvm-refined .publication-text.onvm-text-collapsed {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+  overflow: hidden;
+}
+
+.publication-page.onvm-refined .onvm-read-more {
+  display: block;
+  min-height: 36px;
+  margin: 0;
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: #85858b;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* Médias : aucune hauteur forcée, aucun recadrage */
+.publication-page.onvm-refined .onvm-post-media {
+  margin: 10px 0 0;
+}
+
+.publication-page.onvm-refined .onvm-natural-media {
   width: 100%;
+  min-width: 0;
+  background: transparent;
+}
+
+.publication-page.onvm-refined .onvm-image-button {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
   margin: 0;
   padding: 0;
-  border: none;
-  border-radius: 0;
-  overflow: hidden;
-  background: #f6f6f6;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  cursor: zoom-in;
 }
 
-.publication-page .preview-section.ig .frame {
-  width: 100%;
+.publication-page.onvm-refined .onvm-natural-media img,
+.publication-page.onvm-refined .onvm-natural-media video {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 420px;
+  max-height: min(420px, 60svh);
   margin: 0;
-  border-radius: 0;
+  border: 0;
+  border-radius: 16px;
+  object-fit: contain;
 }
 
-/* Actions proches du média, avec de bonnes zones tactiles */
-.publication-page .publication-footer {
+.publication-page.onvm-refined .onvm-natural-media video {
+  background: #111;
+}
+
+.publication-page.onvm-refined .onvm-natural-media audio {
+  display: block;
+  width: 100%;
+  max-width: 340px;
+  height: 44px;
+}
+
+/* Navigation entre les médias */
+.publication-page.onvm-refined .onvm-media-pagination {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 16px;
-  margin: 0;
-  padding: 8px 14px 0;
-  border: none;
+  gap: 6px;
+  width: fit-content;
+  margin-top: 5px;
+  color: #8c8c92;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
 }
 
-.publication-page .footer-button {
+.publication-page.onvm-refined .onvm-media-pagination button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #66666d;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+/* Actions compactes */
+.publication-page.onvm-refined .publication-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.publication-page.onvm-refined .footer-button {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 44px;
+  justify-content: flex-start;
+  gap: 5px;
+  min-width: 40px;
   min-height: 44px;
   margin: 0;
-  padding: 6px 0;
-  border: none;
+  padding: 0;
+  border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: #202020;
-  font-size: 23px;
+  color: #55555b;
+  font: inherit;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: color 150ms ease, transform 150ms ease;
 }
 
-.publication-page .footer-button span {
+.publication-page.onvm-refined .footer-button svg {
+  width: 21px;
+  height: 21px;
+  flex-shrink: 0;
+  stroke-width: 1.7;
+}
+
+.publication-page.onvm-refined .footer-button span {
   color: inherit;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
 }
 
-.publication-page .footer-button.liked {
+.publication-page.onvm-refined .footer-button.liked {
   color: #ff006e;
 }
 
-.publication-page .footer-button:active {
-  transform: scale(0.94);
+.publication-page.onvm-refined .footer-button.liked svg {
+  fill: currentColor;
 }
 
-.publication-page .footer-button:focus-visible {
-  outline: 2px solid #ff006e;
-  outline-offset: 3px;
-  border-radius: 8px;
+.publication-page.onvm-refined .footer-button:active {
+  opacity: 0.6;
 }
 
-/* Commentaires sans ligne de séparation */
-.publication-page .comments-section {
-  margin: 0;
-  padding: 12px 14px 0;
-  border: none;
+/* Commentaires */
+.publication-page.onvm-refined .comments-section {
+  margin: 6px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
-.publication-page .comment {
-  margin-bottom: 12px;
-}
-
-.publication-page .comment-content {
+.publication-page.onvm-refined .comment-content {
   min-width: 0;
-  background: #f7f7f8;
+  background: #f6f6f8;
+  border-radius: 12px;
+}
+
+.publication-page.onvm-refined .comment-media img,
+.publication-page.onvm-refined .comment-media video {
+  display: block;
+  max-width: 100%;
+  max-height: 260px;
+  margin-top: 8px;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.publication-page.onvm-refined .comment-media audio {
+  max-width: 100%;
+}
+
+.publication-page.onvm-refined .add-comment {
+  background: #f6f6f8;
   border-radius: 14px;
 }
 
-.publication-page .add-comment {
-  background: #f7f7f8;
-  border-radius: 16px;
+.publication-page.onvm-refined button:focus-visible {
+  outline: 2px solid #ff006e;
+  outline-offset: 3px;
 }
 
-@media (max-width: 380px) {
-  .publication-page .publication-footer {
-    column-gap: 10px;
+/* Petits téléphones */
+@media (max-width: 360px) {
+  .publication-page.onvm-refined .publication {
+    --avatar-size: 34px;
+    --avatar-gap: 8px;
+    padding-right: 10px;
+    padding-left: 10px;
   }
 
-  .publication-page .publication {
-    margin-bottom: 20px;
+  .publication-page.onvm-refined .publication-footer {
+    column-gap: 9px;
+  }
+
+  .publication-page.onvm-refined .publication-text {
+    font-size: 14px;
   }
 }

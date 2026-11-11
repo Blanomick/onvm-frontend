@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Auth.css';
-
+import { FiEye, FiEyeOff } from "react-icons/fi";
 const apiUrl = (process.env.REACT_APP_API_URL || '').trim().replace(/\/+$/, '');
 
 const Auth = ({ onLogin }) => {
@@ -126,218 +126,220 @@ const Auth = ({ onLogin }) => {
   };
 
   return (
-    <main className="onvm-auth">
-      <div className="onvm-auth__layout">
-        <section className="onvm-auth__intro" aria-label="Bienvenue sur ONVM">
-          <div className="onvm-auth__brand">
-            ONVM<span aria-hidden="true">.</span>
-          </div>
+  <main className="onvm-auth">
+    <div className="onvm-auth__page">
+      <header className="onvm-auth__welcome">
+        <img
+          src="/onvm-logo.png"
+          alt=""
+          className="onvm-auth__logo"
+          width="100"
+          height="100"
+        />
 
-          <div className="onvm-auth__intro-content">
-            <span className="onvm-auth__eyebrow">LES LIENS COMMENCENT ICI</span>
+        <div className="onvm-auth__wordmark">ONVM</div>
 
-            <h1>
-              Ton monde.
-              <br />
-              Tes liens.
-              <br />
-              <span>Tes moments.</span>
-            </h1>
+        <h1>
+          {isLogin ? "Retrouve ton monde." : "Fais partie du monde."}
+        </h1>
 
-            <p>
-              Retrouve ta communauté, partage ce qui te ressemble
-              et fais de nouvelles rencontres.
-            </p>
-          </div>
+        <p>
+          {isLogin
+            ? "Tes proches. Tes échanges. Ton espace."
+            : "Crée ton compte et rejoins la conversation."}
+        </p>
+      </header>
 
-          <div className="onvm-auth__signature">
-            Un espace pour être toi.
-          </div>
-        </section>
-
-        <section
-          className="onvm-auth__card"
-          aria-labelledby="onvm-auth-title"
-          aria-busy={isSubmitting}
+      <section
+        className="onvm-auth__content"
+        aria-label={isLogin ? "Connexion à ONVM" : "Inscription sur ONVM"}
+        aria-busy={isSubmitting}
+      >
+        <div
+          className="onvm-auth__modes"
+          aria-label="Choisir un formulaire"
         >
-          <div className="onvm-auth__modes" aria-label="Choisir un formulaire">
-            <button
-              type="button"
-              className={isLogin ? 'is-active' : ''}
-              aria-pressed={isLogin}
-              disabled={isSubmitting}
-              onClick={() => changeMode(true)}
-            >
-              Connexion
-            </button>
+          <button
+            type="button"
+            className={isLogin ? "is-active" : ""}
+            aria-pressed={isLogin}
+            disabled={isSubmitting}
+            onClick={() => changeMode(true)}
+          >
+            Connexion
+          </button>
 
-            <button
-              type="button"
-              className={!isLogin ? 'is-active' : ''}
-              aria-pressed={!isLogin}
-              disabled={isSubmitting}
-              onClick={() => changeMode(false)}
-            >
-              Inscription
-            </button>
-          </div>
+          <button
+            type="button"
+            className={!isLogin ? "is-active" : ""}
+            aria-pressed={!isLogin}
+            disabled={isSubmitting}
+            onClick={() => changeMode(false)}
+          >
+            Inscription
+          </button>
+        </div>
 
-          <header className="onvm-auth__heading">
-            <h2 id="onvm-auth-title">
-              {isLogin ? 'Heureux de te revoir.' : 'Bienvenue chez toi.'}
-            </h2>
-            <p>
-              {isLogin
-                ? 'Connecte-toi pour retrouver ton monde.'
-                : 'Crée ton compte et rejoins la conversation.'}
-            </p>
-          </header>
-
-          <form className="onvm-auth__form" onSubmit={handleSubmit}>
-            {!isLogin && (
-              <div className="onvm-auth__field">
-                <label htmlFor="onvm-username">Nom d’utilisateur</label>
-                <input
-                  id="onvm-username"
-                  name="username"
-                  type="text"
-                  autoComplete="username"
-                  placeholder="Comment doit-on t’appeler ?"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  disabled={isSubmitting}
-                  required
-                />
-              </div>
-            )}
-
+        <form className="onvm-auth__form" onSubmit={handleSubmit}>
+          {!isLogin && (
             <div className="onvm-auth__field">
-              <label htmlFor="onvm-email">Adresse e-mail</label>
+              <label htmlFor="onvm-username">Nom d’utilisateur</label>
+
               <input
-                id="onvm-email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                placeholder="toi@exemple.com"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                id="onvm-username"
+                name="username"
+                type="text"
+                autoComplete="username"
+                placeholder="Comment doit-on t’appeler ?"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
                 disabled={isSubmitting}
                 required
               />
             </div>
+          )}
 
-            <div className="onvm-auth__field">
-              <label htmlFor="onvm-password">Mot de passe</label>
+          <div className="onvm-auth__field">
+            <label htmlFor="onvm-email">Adresse e-mail</label>
 
-              <div className="onvm-auth__password">
+            <input
+              id="onvm-email"
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              placeholder="ton@email.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+
+          <div className="onvm-auth__field">
+            <label htmlFor="onvm-password">Mot de passe</label>
+
+            <div className="onvm-auth__password">
+              <input
+                id="onvm-password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                autoComplete={isLogin ? "current-password" : "new-password"}
+                placeholder={
+                  isLogin ? "Ton mot de passe" : "Choisis un mot de passe"
+                }
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={isSubmitting}
+                required
+              />
+
+              <button
+                type="button"
+                className="onvm-auth__visibility"
+                aria-label={
+                  showPassword
+                    ? "Masquer les mots de passe"
+                    : "Afficher les mots de passe"
+                }
+                aria-pressed={showPassword}
+                disabled={isSubmitting}
+                onClick={() => setShowPassword((visible) => !visible)}
+              >
+                {showPassword ? (
+                  <FiEyeOff aria-hidden="true" />
+                ) : (
+                  <FiEye aria-hidden="true" />
+                )}
+              </button>
+            </div>
+          </div>
+
+          {!isLogin && (
+            <>
+              <div className="onvm-auth__field">
+                <label htmlFor="onvm-confirm-password">
+                  Confirmer le mot de passe
+                </label>
+
                 <input
-                  id="onvm-password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete={isLogin ? 'current-password' : 'new-password'}
-                  placeholder={isLogin ? 'Ton mot de passe' : 'Choisis un mot de passe'}
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  id="onvm-confirm-password"
+                  name="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Saisis à nouveau ton mot de passe"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
                   disabled={isSubmitting}
                   required
                 />
+              </div>
 
-                <button
-                  type="button"
-                  className="onvm-auth__visibility"
-                  aria-label={
-                    showPassword
-                      ? 'Masquer les mots de passe'
-                      : 'Afficher les mots de passe'
-                  }
-                  aria-pressed={showPassword}
+              <div className="onvm-auth__field">
+                <label htmlFor="onvm-referral">
+                  Code de parrainage <span>facultatif</span>
+                </label>
+
+                <input
+                  id="onvm-referral"
+                  name="referralCode"
+                  type="text"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="Le code de la personne qui t’invite"
+                  value={referralCode}
+                  onChange={(event) => setReferralCode(event.target.value)}
                   disabled={isSubmitting}
-                  onClick={() => setShowPassword((visible) => !visible)}
-                >
-                  {showPassword ? 'Masquer' : 'Voir'}
-                </button>
+                />
               </div>
-            </div>
+            </>
+          )}
 
-            {!isLogin && (
-              <>
-                <div className="onvm-auth__field">
-                  <label htmlFor="onvm-confirm-password">
-                    Confirmer le mot de passe
-                  </label>
-                  <input
-                    id="onvm-confirm-password"
-                    name="confirmPassword"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    placeholder="Saisis à nouveau ton mot de passe"
-                    value={confirmPassword}
-                    onChange={(event) => setConfirmPassword(event.target.value)}
-                    disabled={isSubmitting}
-                    required
-                  />
-                </div>
-
-                <div className="onvm-auth__field">
-                  <label htmlFor="onvm-referral">
-                    Code de parrainage <span>facultatif</span>
-                  </label>
-                  <input
-                    id="onvm-referral"
-                    name="referralCode"
-                    type="text"
-                    autoCapitalize="none"
-                    spellCheck={false}
-                    placeholder="Le code de la personne qui t’invite"
-                    value={referralCode}
-                    onChange={(event) => setReferralCode(event.target.value)}
-                    disabled={isSubmitting}
-                  />
-                </div>
-              </>
-            )}
-
-            {error && (
-              <div className="onvm-auth__error" role="alert">
-                {error}
-              </div>
-            )}
-
-            <button
-              className="onvm-auth__submit"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <span className="onvm-auth__spinner" aria-hidden="true" />
-                  {isLogin ? 'Connexion en cours…' : 'Création du compte…'}
-                </>
-              ) : (
-                <>
-                  {isLogin ? 'Se connecter' : 'Créer mon compte'}
-                  <span aria-hidden="true">↗</span>
-                </>
-              )}
-            </button>
-
-            <p className="onvm-auth__switch">
-              {isLogin ? 'Nouveau sur ONVM ?' : 'Tu as déjà un compte ?'}{' '}
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={() => changeMode(!isLogin)}
-              >
-                {isLogin ? 'Rejoins-nous' : 'Connecte-toi'}
-              </button>
+          {error && (
+            <p className="onvm-auth__error" role="alert">
+              {error}
             </p>
-          </form>
-        </section>
-      </div>
-    </main>
-  );
+          )}
+
+          <button
+            className="onvm-auth__submit"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting && (
+              <span className="onvm-auth__spinner" aria-hidden="true" />
+            )}
+
+            {isSubmitting
+              ? isLogin
+                ? "Connexion en cours…"
+                : "Création du compte…"
+              : isLogin
+                ? "Se connecter"
+                : "Créer mon compte"}
+          </button>
+
+          <p className="onvm-auth__switch">
+            {isLogin ? "Pas encore de compte ?" : "Tu as déjà un compte ?"}{" "}
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={() => changeMode(!isLogin)}
+            >
+              {isLogin ? "Créer un compte" : "Se connecter"}
+            </button>
+          </p>
+        </form>
+      </section>
+
+      <footer className="onvm-auth__footer">
+        Un espace pour être toi.
+      </footer>
+    </div>
+  </main>
+);  
 };
 
 export default Auth;

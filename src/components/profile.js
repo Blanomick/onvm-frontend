@@ -9,7 +9,7 @@ import { FaHome, FaSearch, FaPlus, FaBell, FaUser  , FaUsers} from 'react-icons/
 import axios from 'axios'; // ✅ nécessaire pour handleComment
 import { FiSettings } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
-
+import BioText from "./BioText";
 import {
   FiArrowLeft,
   FiCamera,
@@ -635,11 +635,14 @@ console.log("🧪 Retweets :", retweets);
   </h1>
 
   <p className="onvm-profile-bio">
-    {profileUser.bio ||
-      (isOwner
-        ? 'Quelques mots sur toi, ce qui t’anime, ce que tu partages.'
-        : 'Cette personne n’a pas encore ajouté de biographie.')}
-  </p>
+  {profileUser.bio ? (
+    <BioText value={profileUser.bio} />
+  ) : isOwner ? (
+    "Quelques mots sur toi, ce qui t’anime, ce que tu partages."
+  ) : (
+    "Cette personne n’a pas encore ajouté de biographie."
+  )}
+</p>
 
   <div className="onvm-profile-statistics">
     <div>

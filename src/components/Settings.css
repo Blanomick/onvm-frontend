@@ -1,79 +1,345 @@
-/* Police numérique Orbitron */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500&display=swap');
-
-.settings-container {
-  padding: 40px 20px;
-  max-width: 600px;
-  margin: auto;
-  font-family: 'Orbitron', sans-serif;
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border-radius: 16px;
-  margin-top: 80px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-  color: #fff;
-}
-
-.settings-title {
-  text-align: center;
-  font-size: 26px;
-  margin-bottom: 30px;
-  color: #00fff0;
-}
-
-.edit-profile-button {
-  display: block;
+.onvm-settings {
+  box-sizing: border-box;
   width: 100%;
-  padding: 14px;
-  background-color: #00bcd4;
-  color: white;
-  font-size: 16px;
-  border: none;
-  border-radius: 10px;
+  max-width: 620px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  padding: 0 22px calc(110px + env(safe-area-inset-bottom));
+  background: #fff;
+  color: #202024;
+}
+
+.onvm-settings *,
+.onvm-settings *::before,
+.onvm-settings *::after {
+  box-sizing: border-box;
+}
+
+.onvm-settings button {
+  font: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.onvm-settings__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 80px;
+  padding-top: env(safe-area-inset-top);
+}
+
+.onvm-settings__header h1 {
+  margin: 0;
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -0.8px;
+}
+
+.onvm-settings .onvm-settings__back {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f4f4f6;
+  color: #25252b;
   cursor: pointer;
-  margin-bottom: 30px;
-  transition: background-color 0.3s ease, transform 0.2s;
 }
 
-.edit-profile-button:hover {
-  background-color: #0097a7;
-  transform: scale(1.02);
+.onvm-settings__back svg {
+  width: 21px;
+  height: 21px;
 }
 
-.bio-section {
-  margin-bottom: 30px;
-}
-
-.bio-textarea {
+.onvm-settings .onvm-settings__profile {
+  display: flex;
+  align-items: center;
+  gap: 15px;
   width: 100%;
-  min-height: 120px;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background-color: rgba(255, 255, 255, 0.05);
-  color: #fff;
-  font-family: 'Orbitron', sans-serif;
+  margin: 14px 0 32px;
+  padding: 15px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.onvm-settings__profile-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.onvm-settings__profile-text strong {
+  overflow: hidden;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onvm-settings__profile-text > span {
+  color: #85858e;
+  font-size: 13px;
+}
+
+.onvm-settings__section {
+  margin: 0 0 32px;
+}
+
+.onvm-settings__section h2 {
+  margin: 0 0 14px;
+  color: #777781;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
+}
+
+.onvm-settings__options {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.onvm-settings .onvm-settings__option {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 78px;
+  padding: 12px 8px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #25252b;
+  text-align: left;
+  cursor: pointer;
+  transition: background 150ms ease;
+}
+
+.onvm-settings__icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 44px;
+  width: 44px;
+  height: 44px;
+  border-radius: 15px;
+  background: #f5f5f7;
+}
+
+.onvm-settings__icon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.7;
+}
+
+.onvm-settings__option-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.onvm-settings__option-text strong {
   font-size: 14px;
-  margin-bottom: 12px;
-  resize: vertical;
+  font-weight: 650;
 }
 
-.settings-section {
-  padding: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
+.onvm-settings__option-text > span {
+  color: #85858f;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
-.settings-section h3 {
-  font-size: 20px;
-  color: #00e5ff;
-  margin-bottom: 10px;
+.onvm-settings__chevron {
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  color: #a2a2ab;
 }
 
-.settings-section ul {
-  list-style-type: square;
-  padding-left: 20px;
+.onvm-settings__wallet {
+  padding: 21px;
+  border-radius: 23px;
+  background: #f6f6f8;
 }
 
-.settings-section li {
-  margin-bottom: 8px;
+.onvm-settings__wallet-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.onvm-settings__wallet-heading > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #777781;
+  font-size: 13px;
+}
+
+.onvm-settings__wallet-heading > span svg {
+  width: 18px;
+  height: 18px;
+}
+
+.onvm-settings .onvm-settings__refresh {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #65656e;
+  cursor: pointer;
+}
+
+.onvm-settings__refresh:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.onvm-settings__balance {
+  margin: 17px 0 22px;
+  font-size: clamp(24px, 7vw, 34px);
+  font-weight: 750;
+  letter-spacing: -1px;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.onvm-settings .onvm-settings__error {
+  margin: -8px 0 18px;
+  color: #bd3655;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.onvm-settings__wallet-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.onvm-settings__wallet-footer p {
+  flex: 1 1 150px;
+  margin: 0;
+  color: #85858f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.onvm-settings__wallet-footer button {
+  min-height: 40px;
+  padding: 10px 17px;
+  border: 0;
+  border-radius: 12px;
+  background: #e8e8ed;
+  color: #8c8c96;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+.onvm-settings__logout-section {
+  margin-top: 8px;
+}
+
+.onvm-settings .onvm-settings__logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  padding: 12px 8px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #d72c59;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onvm-settings__logout svg {
+  width: 19px;
+  height: 19px;
+}
+
+.onvm-settings__signature {
+  margin: 35px 0 0;
+  color: #c5c5ce;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-align: center;
+}
+
+.onvm-settings .onvm-settings__login {
+  min-height: 44px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 13px;
+  background: #222228;
+  color: #fff;
+  cursor: pointer;
+}
+
+.onvm-settings button:focus-visible {
+  outline: 2px solid #ff0879;
+  outline-offset: 4px;
+}
+
+.onvm-settings__refresh .is-loading {
+  animation: onvm-settings-spin 1s linear infinite;
+}
+
+@keyframes onvm-settings-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (hover: hover) {
+  .onvm-settings .onvm-settings__option:hover {
+    background: #f8f8fa;
+  }
+
+  .onvm-settings .onvm-settings__logout:hover {
+    background: #fff0f5;
+  }
+}
+
+@media (max-width: 380px) {
+  .onvm-settings {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .onvm-settings__wallet {
+    padding: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onvm-settings__refresh .is-loading {
+    animation: none;
+  }
+
+  .onvm-settings .onvm-settings__option {
+    transition: none;
+  }
 }

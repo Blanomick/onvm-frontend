@@ -1,19 +1,21 @@
 import React, { useEffect, useState, useRef } from 'react';
 import io from 'socket.io-client';
 import {
-  FaArrowLeft,
-  FaImage,
-  FaMicrophone,
-  FaPaperPlane,
-  FaPhone,
-  FaVideo,
-  FaEllipsisH,
-  FaTimes,
-} from 'react-icons/fa';
+  FiArrowLeft as FaArrowLeft,
+  FiImage as FaImage,
+ 
+  FiSend as FaPaperPlane,
+  FiPhone as FaPhone,
+  FiVideo as FaVideo,
+  FiMoreHorizontal as FaEllipsisH,
+  FiX as FaTimes,
+} from "react-icons/fi";
+
+import ProfileAvatar from "./ProfileAvatar";
 import { useNavigate, useParams } from 'react-router-dom';
 
 import VoiceMessageBubble from './VoiceMessageBubble';
-import { CallPanel, VoiceNoteButton } from './calls';
+import { VoiceNoteButton, useCalls } from "./calls";
 import './Chat.css';
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -50,6 +52,7 @@ function normalizeMessage(m) {
 
 const Chat = ({ currentUser }) => {
   const navigate = useNavigate();
+  const calls = useCalls();
   const fileInputRef = useRef(null);
   const messagesEndRef = useRef(null);
 
@@ -65,7 +68,7 @@ const Chat = ({ currentUser }) => {
   const [media, setMedia] = useState(null);
   const [chatUser, setChatUser] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
-  const [showCallPanel, setShowCallPanel] = useState(false);
+ 
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -85,10 +88,21 @@ const Chat = ({ currentUser }) => {
     });
 
     const handleIncomingMessage = (message) => {
-      const msg = normalizeMessage(message);
-      setMessages((prev) => [...prev, msg]);
-      scrollToBottom();
-    };
+  const msg = normalizeMessage({
+    ...message,
+    sender_id: message.sender_id ?? message.user_id,
+  });
+
+  setMessages((previous) => {
+    const exists =
+      msg.id != null &&
+      previous.some((item) => String(item.id) === String(msg.id));
+
+    return exists ? previous : [...previous, msg];
+  });
+
+  scrollToBottom();
+};
 
     socket.on('chat:message', handleIncomingMessage);
 
@@ -102,48 +116,7 @@ const Chat = ({ currentUser }) => {
     };
   }, [activeChatId, currentUser?.id]);
 
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const url = isGroup
-          ? `${apiUrl}/api/messages/group/${currentGroupId}`
-          : `${apiUrl}/api/messages/${conversationId}?withUser=1&viewerId=${currentUser?.id}`;
-
-        const res = await fetch(url);
-        const data = await res.json();
-
-        if (Array.isArray(data)) {
-          setMessages(data.map(normalizeMessage));
-        } else if (Array.isArray(data.messages)) {
-          setMessages(data.messages.map(normalizeMessage));
-
-          if (data.user) {
-            setChatUser(data.user);
-          }
-
-          if (data.group) {
-            setChatUser({
-              id: data.group.id,
-              username: data.group.name,
-              profilePicture: data.group.profile_photo,
-            });
-          }
-        } else {
-          setMessages([]);
-        }
-
-        scrollToBottom();
-      } catch (err) {
-        console.error('[ERREUR] Chargement messages :', err);
-        setMessages([]);
-      }
-    };
-
-    if ((conversationId || currentGroupId) && currentUser?.id) {
-      fetchMessages();
-    }
-  }, [conversationId, currentGroupId, currentUser?.id, isGroup]);
-
+ 
 useEffect(() => {
   if (!currentUser?.id || (!conversationId && !currentGroupId)) {
     return;
@@ -300,52 +273,33 @@ useEffect(() => {
     }
   };
 
-  const handleVoiceSent = async (payload) => {
-    const audioMsg = normalizeMessage({
-      id: payload?.id || `temp-${Date.now()}`,
-      type: 'voice',
-      voice_url: payload.voice_url || payload.playUrl || payload.url,
-      sender_id: currentUser.id,
-      conversation_id: conversationId,
-      group_id: currentGroupId,
-      created_at: payload?.created_at || new Date().toISOString(),
-      content: '',
-      media: null,
-    });
+  const handleVoiceSent = (payload) => {
+  if (!payload?.id) return;
 
-    setMessages((prev) => [...prev, audioMsg]);
+  const audioMsg = normalizeMessage({
+    ...payload,
+    type: "voice",
+    voice_url: payload.voice_url || payload.playUrl || payload.url,
+    sender_id: payload.sender_id ?? payload.user_id ?? currentUser.id,
+    conversation_id: payload.conversation_id ?? conversationId,
+    group_id: currentGroupId,
+    content: "",
+    media: null,
+  });
 
-    socket.emit('chat:message', {
-      chatId: activeChatId,
-      message: audioMsg,
-    });
+  setMessages((previous) => {
+    const exists = previous.some(
+      (message) => String(message.id) === String(audioMsg.id)
+    );
 
-    try {
-      const formData = new FormData();
+    return exists ? previous : [...previous, audioMsg];
+  });
 
-      if (isGroup) {
-        formData.append('group_id', currentGroupId);
-      } else {
-        formData.append('conversation_id', conversationId);
-      }
-
-      formData.append('sender_id', currentUser.id);
-      formData.append('type', 'voice');
-      formData.append('voice_url', audioMsg.voice_url);
-      formData.append('content', '');
-
-      await fetch(`${apiUrl}/api/messages/send`, {
-        method: 'POST',
-        body: formData,
-      });
-    } catch (err) {
-      console.error('[ERREUR] Enregistrement vocal :', err);
-    }
-  };
-
+  scrollToBottom();
+};
   if (!currentUser?.id) {
     return (
-      <div className="chat-page mobile-chat-page">
+      <div className="chat-page mobile-chat-page onvm-chat-refined">
         <div className="chat-empty-state">
           Vous devez être connecté pour accéder à la messagerie.
         </div>
@@ -358,7 +312,7 @@ useEffect(() => {
     : chatUser?.username || `Utilisateur #${conversationId}`;
 
   return (
-    <div className="chat-page mobile-chat-page">
+    <div className="chat-page mobile-chat-page onvm-chat-refined">
       <header className="mobile-chat-header">
         <button
           type="button"
@@ -370,53 +324,77 @@ useEffect(() => {
         </button>
 
         <div className="chat-header-profile">
-          <div className="chat-avatar-stack">
-            {isGroup && groupMembers.length > 0 ? (
-              groupMembers.slice(0, 3).map((member) => (
-                <img
-                  key={member.id}
-                  src={toAbs(member.profilePicture) || '/default-profile.png'}
-                  alt=""
-                  className="chat-avatar small"
-                />
-              ))
-            ) : (
-              <img
-                src={toAbs(chatUser?.profilePicture) || '/default-profile.png'}
-                alt=""
-                className="chat-avatar"
-              />
-            )}
-          </div>
 
-          <div className="chat-header-text">
-            <strong>{title}</strong>
-            <span>
-              {isGroup
-                ? `${groupMembers.length || 1} membre${groupMembers.length > 1 ? 's' : ''}`
-                : 'Conversation'}
-            </span>
-          </div>
+          <div className="chat-avatar-stack">
+  {isGroup && groupMembers.length > 0 ? (
+    groupMembers.slice(0, 3).map((member) => (
+      <ProfileAvatar
+        key={member.id}
+        src={member.profilePicture}
+        name={member.username || "Membre"}
+        size={30}
+        className="onvm-chat-member-avatar"
+      />
+    ))
+  ) : (
+    <ProfileAvatar
+      src={chatUser?.profilePicture}
+      name={title}
+      size={38}
+    />
+  )}
+</div>
+         <div className="chat-header-text">
+  <strong>{title}</strong>
+
+  <span>
+    {isGroup
+      ? `${groupMembers.length || 1} membre${groupMembers.length > 1 ? "s" : ""}`
+      : "Conversation"}
+  </span>
+
+  <small
+    role="status"
+    style={{
+      display: "block",
+      marginTop: 4,
+      fontSize: 11,
+      color: calls?.ready && !isGroup ? "#198754" : "#c62828",
+    }}
+  >
+    {!calls
+      ? "Gestionnaire d’appels absent"
+      : isGroup
+        ? "Appels de groupe indisponibles"
+        : !calls.ready
+          ? "Serveur d’appels non connecté"
+          : "Appels prêts"}
+  </small>
+</div>
         </div>
 
         <div className="chat-header-actions">
-          <button
-            type="button"
-            className="chat-header-icon"
-            onClick={() => setShowCallPanel((prev) => !prev)}
-            aria-label="Appel audio"
-          >
-            <FaPhone />
-          </button>
+        <button
+  type="button"
+  className="chat-header-icon"
+  disabled={!calls?.ready || isGroup}
+  onClick={() => calls.startCall(conversationId, "audio")}
+  aria-label="Appeler en vocal"
+  title={isGroup ? "Appels de groupe non disponibles" : "Appel vocal"}
+>
+  <FaPhone />
+</button>
 
-          <button
-            type="button"
-            className="chat-header-icon"
-            onClick={() => setShowCallPanel((prev) => !prev)}
-            aria-label="Appel vidéo"
-          >
-            <FaVideo />
-          </button>
+<button
+  type="button"
+  className="chat-header-icon"
+  disabled={!calls?.ready || isGroup}
+  onClick={() => calls.startCall(conversationId, "video")}
+  aria-label="Appeler en vidéo"
+  title={isGroup ? "Appels de groupe non disponibles" : "Appel vidéo"}
+>
+  <FaVideo />
+</button>
 
           <button
             type="button"
@@ -428,11 +406,7 @@ useEffect(() => {
         </div>
       </header>
 
-      {showCallPanel && (
-        <div className="mobile-call-panel">
-          <CallPanel chatId={activeChatId} currentUser={currentUser} />
-        </div>
-      )}
+      
 
       <main className="mobile-chat-messages">
         {messages.length === 0 && (
@@ -514,14 +488,12 @@ useEffect(() => {
           <FaImage />
         </button>
 
-        <div className="voice-tool-btn">
-          <FaMicrophone className="voice-fake-icon" />
-          <VoiceNoteButton
-            chatId={activeChatId}
-            currentUser={currentUser}
-            onSent={handleVoiceSent}
-          />
-        </div>
+       <VoiceNoteButton
+  key={activeChatId}
+  chatId={activeChatId}
+  currentUser={currentUser}
+  onSent={handleVoiceSent}
+/>
 
         <input
           className="mobile-chat-text-input"

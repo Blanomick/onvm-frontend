@@ -24,7 +24,7 @@ import StoryPage from './components/StoryPage';
 import Invitation from './components/Invitation'; // adapte le chemin si nécessaire
 import Logout from './components/Logout';
 import CreateGroup from './components/CreateGroup';
-
+import { CallProvider } from "./components/calls";
 function readSavedUser() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -68,7 +68,8 @@ React.useEffect(() => {
 };
 
   return (
-    <Router>
+  <Router>
+    <CallProvider currentUser={currentUser}>
       <div>
         {showBanner && <Banner />}
 
@@ -219,10 +220,11 @@ element={currentUser ? <Chat currentUser={currentUser} /> : <Navigate to="/auth"
             path="/live"
             element={user ? <Live currentUser={user} /> : <Navigate to="/auth" />}
           />
-        </Routes>
+             </Routes>
       </div>
-    </Router>
-  );
+    </CallProvider>
+  </Router>
+);
 };
 
 export default App;

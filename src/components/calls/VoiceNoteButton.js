@@ -1,195 +1,472 @@
-// frontend/src/app/calls/VoiceNoteButton.js
 import React, { useEffect, useRef, useState } from "react";
+import {
+  FiMic,
+  FiSquare,
+  FiSend,
+  FiTrash2,
+  FiLoader,
+  FiX,
+} from "react-icons/fi";
+import "./VoiceNoteButton.css";
 
-const SERVER_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+const SERVER_URL = (
+  process.env.REACT_APP_API_URL || "http://localhost:5000"
+).replace(/\/+$/, "");
 
-// util pour détecter si on est sur iOS Safari (MediaRecorder parfois capricieux)
-function isiOSSafari() {
-  if (typeof window === 'undefined') return false;
-  const ua = window.navigator.userAgent;
-  return /iP(hone|ad|od)/.test(ua) && /Safari/.test(ua) && !/Chrome/.test(ua);
+function formatDuration(value) {
+  const seconds = Math.max(0, Math.floor(value));
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }
 
 export default function VoiceNoteButton({ chatId, currentUser, onSent }) {
-const clientTagRef = useRef(
-   (typeof crypto !== 'undefined' && crypto.randomUUID)      ? crypto.randomUUID()
-     : String(Math.random()).slice(2)
- );
-  const [isRecording, setIsRecording] = useState(false);
+  const [phase, setPhase] = useState("idle");
   const [seconds, setSeconds] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const chunksRef = useRef([]);
-  const timerRef = useRef(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [error, setError] = useState("");
+
+  const phaseRef = useRef("idle");
+  const aliveRef = useRef(false);
+  const recorderRef = useRef(null);
   const streamRef = useRef(null);
+  const chunksRef = useRef([]);
+  const blobRef = useRef(null);
+  const previewUrlRef = useRef("");
+  const previewAudioRef = useRef(null);
+  const timerRef = useRef(null);
+  const startedAtRef = useRef(0);
+  const durationRef = useRef(0);
+  const discardRef = useRef(false);
+  const clientTagRef = useRef("");
+
+  function changePhase(value) {
+    phaseRef.current = value;
+    if (aliveRef.current) setPhase(value);
+  }
+
+  function releaseMicrophone() {
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+
+    streamRef.current?.getTracks().forEach((track) => track.stop());
+    streamRef.current = null;
+  }
+
+  function clearPreview() {
+    previewAudioRef.current?.pause();
+
+    if (previewUrlRef.current) {
+      URL.revokeObjectURL(previewUrlRef.current);
+    }
+
+    previewUrlRef.current = "";
+    blobRef.current = null;
+
+    if (aliveRef.current) setPreviewUrl("");
+  }
 
   useEffect(() => {
+    aliveRef.current = true;
+
     return () => {
-      // cleanup si on démonte le composant
-      try { clearInterval(timerRef.current); } catch {}
-      
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-   try { mediaRecorderRef.current.stop(); } catch {}
- }
-      
-      streamRef.current?.getTracks()?.forEach(t => t.stop());
+      aliveRef.current = false;
+      discardRef.current = true;
+      clearInterval(timerRef.current);
+
+      const recorder = recorderRef.current;
+
+      if (recorder) {
+        recorder.onstop = null;
+        recorder.ondataavailable = null;
+        recorder.onerror = null;
+
+        if (recorder.state !== "inactive") {
+          recorder.stop();
+        }
+      }
+
+      streamRef.current?.getTracks().forEach((track) => track.stop());
+
+      if (previewUrlRef.current) {
+        URL.revokeObjectURL(previewUrlRef.current);
+      }
     };
   }, []);
 
+  async function startRecording() {
+    if (phaseRef.current !== "idle") return;
 
+    setError("");
 
- async function startRecording() {
-  let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch (e) {
-      console.error("[VoiceNoteButton] microphone denied:", e);
+    const conversationId = Number(chatId);
+
+    // La route backend actuelle attend une conversation numérique.
+    if (!Number.isInteger(conversationId) || conversationId <= 0) {
+      setError("L’envoi de vocaux dans les groupes doit encore être activé côté serveur.");
       return;
     }
 
-  streamRef.current = stream;
+    if (!currentUser?.id) {
+      setError("Connecte-toi pour envoyer un message vocal.");
+      return;
+    }
 
-    // Meilleur MIME disponible
-    let mimeType = "audio/webm;codecs=opus";
-    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported(mimeType)) {
-      if (MediaRecorder && MediaRecorder.isTypeSupported("audio/webm")) {
-        mimeType = "audio/webm";
-      } else {
-        // Fallback iOS récent : audio/mp4 (selon support)
-        mimeType = "audio/mp4";
+    if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+      setError("L’enregistrement audio n’est pas disponible dans ce navigateur.");
+      return;
+    }
+
+    changePhase("requesting");
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: { ideal: 1 },
+        },
+      });
+
+      if (!aliveRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
       }
+
+      streamRef.current = stream;
+
+      const formats = [
+        "audio/webm;codecs=opus",
+        "audio/mp4",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+      ];
+
+      const mimeType = formats.find((format) =>
+        window.MediaRecorder.isTypeSupported(format)
+      );
+
+      const recorder = new window.MediaRecorder(stream, {
+        ...(mimeType ? { mimeType } : {}),
+        audioBitsPerSecond: 96000,
+      });
+
+      recorderRef.current = recorder;
+      chunksRef.current = [];
+      discardRef.current = false;
+      durationRef.current = 0;
+
+      clientTagRef.current =
+        window.crypto?.randomUUID?.() ||
+        `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onerror = () => {
+        discardRef.current = true;
+
+        if (recorder.state !== "inactive") recorder.stop();
+
+        releaseMicrophone();
+
+        if (aliveRef.current) {
+          setError("L’enregistrement a été interrompu. Réessaie.");
+          changePhase("idle");
+        }
+      };
+
+      recorder.onstop = () => {
+        releaseMicrophone();
+        recorderRef.current = null;
+
+        if (!aliveRef.current || discardRef.current) return;
+
+        durationRef.current =
+          (performance.now() - startedAtRef.current) / 1000;
+
+        const type = recorder.mimeType || chunksRef.current[0]?.type;
+        const blob = new Blob(chunksRef.current, { type });
+
+        if (!blob.size) {
+          setError("Aucun son enregistré. Réessaie.");
+          changePhase("idle");
+          return;
+        }
+
+        blobRef.current = blob;
+        const url = URL.createObjectURL(blob);
+        previewUrlRef.current = url;
+
+        setPreviewUrl(url);
+        setSeconds(durationRef.current);
+        changePhase("preview");
+      };
+
+      recorder.start();
+      startedAtRef.current = performance.now();
+
+      setSeconds(0);
+      changePhase("recording");
+
+      timerRef.current = window.setInterval(() => {
+        if (aliveRef.current) {
+          setSeconds((performance.now() - startedAtRef.current) / 1000);
+        }
+      }, 250);
+    } catch (err) {
+      releaseMicrophone();
+
+      if (!aliveRef.current) return;
+
+      setError(
+        err.name === "NotAllowedError"
+          ? "Autorise l’accès au microphone dans ton navigateur."
+          : err.name === "NotFoundError"
+            ? "Aucun microphone détecté."
+            : "Impossible de démarrer l’enregistrement."
+      );
+
+      changePhase("idle");
+    }
+  }
+
+  function stopRecording() {
+    const recorder = recorderRef.current;
+
+    if (
+      phaseRef.current !== "recording" ||
+      !recorder ||
+      recorder.state === "inactive"
+    ) {
+      return;
     }
 
-    const mr = new MediaRecorder(stream, { mimeType });
+    changePhase("stopping");
+    clearInterval(timerRef.current);
+
+    // onstop reçoit le dernier morceau audio avant de créer l’aperçu.
+    recorder.stop();
+  }
+
+  function discardRecording() {
+    if (phaseRef.current === "uploading") return;
+
+    discardRef.current = true;
+
+    const recorder = recorderRef.current;
+
+    if (recorder && recorder.state !== "inactive") {
+      recorder.stop();
+    }
+
+    releaseMicrophone();
+    clearPreview();
+
     chunksRef.current = [];
-    mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
-   mr.onstop = () => {
-   try { stream.getTracks().forEach((t) => t.stop()); } catch {}
-   streamRef.current = null;
-};
-    mediaRecorderRef.current = mr;
-    mr.start(200); // petits chunks
-
-    setIsRecording(true);
     setSeconds(0);
-    timerRef.current = setInterval(() => setSeconds((s) => s + 1), 1000);
+    setError("");
+    changePhase("idle");
   }
-async function stopAndSend() {
-  if (!mediaRecorderRef.current) return;
-  const mr = mediaRecorderRef.current;
 
-   // --- Guards: on ne tente rien si les identifiants sont invalides ---
- // --- Guards légers : on exige userId, et on aura AU MOINS chatId en texte ---
- const convId = Number(chatId);
-if (!currentUser?.id) {
-   console.error("[VoiceNoteButton] userId manquant:", currentUser);
-   return;
- }
+  async function sendRecording() {
+    // Verrou immédiat : un double clic ne lance pas deux requêtes.
+    if (phaseRef.current !== "preview" || !blobRef.current) return;
 
-  // stop + cleanup
- try { mr.stop(); } catch {}
-  clearInterval(timerRef.current);
-  setIsRecording(false);
+    changePhase("uploading");
+    setError("");
+    previewAudioRef.current?.pause();
 
-  // attendre que le dernier chunk arrive
-  await new Promise((r) => setTimeout(r, 50));
+    const blob = blobRef.current;
+    const extension = blob.type.includes("mp4")
+      ? "m4a"
+      : blob.type.includes("ogg")
+        ? "ogg"
+        : "webm";
 
-  // construire le blob
-  if (!chunksRef.current.length) {
-  // rien à envoyer
- return;
- }
-  const mime = mr.mimeType || "audio/webm";
-  const ext = mime.includes("mp4") || mime.includes("aac") ? "m4a" : "webm";
-  const blob = new Blob(chunksRef.current, { type: mime });
+    const formData = new FormData();
+    formData.append("chatId", String(chatId));
+    formData.append("conversation_id", String(chatId));
+    formData.append("userId", String(currentUser.id));
+    formData.append("duration", String(durationRef.current));
+    formData.append("client_tag", clientTagRef.current);
+    formData.append("voice", blob, `voice_${Date.now()}.${extension}`);
 
-  // ✅ FormData déclaré correctement
+    let savedMessage;
 
-   // ✅ FormData déclaré correctement
-const fd = new FormData();
- // Toujours envoyer chatId (ancien backend)
- fd.append("chatId", String(chatId ?? ""));      // ← clé attendue par ton backend actuel
- // Et envoyer conversation_id si dispo (nouveau backend)
- if (Number.isFinite(convId)) {
-   fd.append("conversation_id", String(convId));  // ← pour compat future
- }
- fd.append("userId", String(currentUser?.id ?? ''));
- fd.append("duration", String(seconds));  
- fd.append("client_tag", clientTagRef.current);   // ← AJOUT             // ← durée côté front
-  fd.append("voice", blob, `voice_${Date.now()}.${ext}`);
-  // DEBUG: voir exactement les champs envoyés
-  try {
-    for (const [k, v] of fd.entries()) {
-      console.log("[VoiceNoteButton] FD:", k, v instanceof Blob ? `Blob(${v.size})` : v);
+    try {
+      const response = await fetch(`${SERVER_URL}/api/voice-notes`, {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Envoi impossible.");
+      }
+
+      const url = data.voice_url || data.playUrl || data.url;
+
+      if (!data.id || !url) {
+        throw new Error("Confirmation du serveur incomplète.");
+      }
+
+      savedMessage = {
+        ...data,
+        type: "voice",
+        sender_id: data.user_id ?? currentUser.id,
+        voice_url: new URL(url, `${SERVER_URL}/`).href,
+      };
+    } catch (err) {
+      if (aliveRef.current) {
+        setError(
+          `${err.message} Vérifie la conversation avant de réessayer : le serveur peut avoir reçu le vocal.`
+        );
+        changePhase("preview");
+      }
+      return;
     }
-  } catch {}
-  let data = null;
-  setIsUploading(true);
-  try {
-     const res = await fetch(`${SERVER_URL}/api/voice-notes`, {
-      method: "POST",
-      body: fd,
-    });
-      if (!res.ok) {
-    const txt = await res.text().catch(() => '');
-      throw new Error(`Upload failed ${res.status}: ${txt}`);
+
+    if (!aliveRef.current) return;
+
+    clearPreview();
+    chunksRef.current = [];
+    setSeconds(0);
+    changePhase("idle");
+
+    // Le serveur a déjà enregistré le message.
+    // Ce callback ne fait que mettre à jour l’affichage.
+    try {
+      onSent?.(savedMessage);
+    } catch (err) {
+      console.error("[VOCAL] Actualisation de l’affichage :", err);
     }
-    data = await res.json();
-  } catch (e) {
-    console.error("[VoiceNoteButton] upload error:", e);
-    setIsUploading(false);
-    return;
   }
- 
-   const playUrl = data?.playUrl || data?.url;
-  if (!playUrl) { setIsUploading(false); return; }
-  const absoluteUrl = playUrl.startsWith('http')
-    ? playUrl
-    : `${SERVER_URL}${playUrl}`;
-  const bust = `${absoluteUrl}${absoluteUrl.includes('?') ? '&' : '?'}t=${Date.now()}`;
 
- onSent?.({
-   id: data?.id ?? Date.now(),
-    type: "voice",
-    voice_url: bust,
-    duration: data?.duration ?? seconds ?? null,
-    created_at: data?.created_at ?? new Date().toISOString(),
-    client_tag: clientTagRef.current,
-  });
-
-  // reset
-  chunksRef.current = [];
-   mediaRecorderRef.current = null;
- setIsUploading(false);
- setSeconds(0);
-}
-
+  const panelVisible = [
+    "recording",
+    "stopping",
+    "preview",
+    "uploading",
+  ].includes(phase);
 
   return (
-    <div className="flex items-center gap-2">
-      {!isRecording ? (
-        <button
-           className="px-3 py-2 rounded-2xl shadow bg-emerald-600 text-white hover:brightness-110 disabled:opacity-60"
-            onClick={startRecording}
-         disabled={isUploading}
-          title="Enregistrer une note vocale"
+    <div className="onvm-recorder">
+      <button
+        type="button"
+        className={`onvm-recorder__trigger ${
+          phase === "recording" ? "is-recording" : ""
+        }`}
+        onClick={startRecording}
+        disabled={phase !== "idle"}
+        aria-label={
+          phase === "requesting"
+            ? "Autorisation du microphone en cours"
+            : "Enregistrer un message vocal"
+        }
+      >
+        {phase === "requesting" ? (
+          <FiLoader className="onvm-recorder__spinner" />
+        ) : (
+          <FiMic />
+        )}
+      </button>
+
+      {panelVisible && (
+        <section
+          className="onvm-recorder__panel"
+          aria-label="Enregistrement vocal"
         >
-          🎙️ Note vocale
-        </button>
-      ) : (
-        <button
-           className="px-3 py-2 rounded-2xl shadow bg-rose-600 text-white hover:brightness-110 disabled:opacity-60"
-           onClick={stopAndSend}
-         disabled={isUploading}
-          title="Arrêter et envoyer"
-        >
-          ⏹️ Envoyer ({seconds}s)
-        </button>
+          <div className="onvm-recorder__heading">
+            <span>
+              {phase === "recording" && (
+                <span className="onvm-recorder__dot" aria-hidden="true" />
+              )}
+
+              {phase === "recording"
+                ? "Enregistrement"
+                : phase === "stopping"
+                  ? "Préparation…"
+                  : phase === "uploading"
+                    ? "Envoi en cours…"
+                    : "Écouter avant d’envoyer"}
+            </span>
+
+            <span className="onvm-recorder__timer">
+              {formatDuration(seconds)}
+            </span>
+          </div>
+
+          {previewUrl && (
+            <audio
+              ref={previewAudioRef}
+              src={previewUrl}
+              controls
+              className="onvm-recorder__preview"
+            />
+          )}
+
+          <div className="onvm-recorder__actions">
+            <button
+              type="button"
+              className="onvm-recorder__discard"
+              onClick={discardRecording}
+              disabled={phase === "uploading" || phase === "stopping"}
+            >
+              <FiTrash2 />
+              Supprimer
+            </button>
+
+            {phase === "recording" ? (
+              <button
+                type="button"
+                className="onvm-recorder__stop"
+                onClick={stopRecording}
+              >
+                <FiSquare />
+                Arrêter
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="onvm-recorder__send"
+                onClick={sendRecording}
+                disabled={phase !== "preview"}
+              >
+                {phase === "uploading" || phase === "stopping" ? (
+                  <FiLoader className="onvm-recorder__spinner" />
+                ) : (
+                  <FiSend />
+                )}
+                {phase === "uploading" ? "Envoi…" : "Envoyer"}
+              </button>
+            )}
+          </div>
+
+          {error && (
+            <p className="onvm-recorder__error" role="alert">
+              {error}
+            </p>
+          )}
+        </section>
       )}
-      {isiOSSafari() && (
-        <span className="text-xs text-gray-500">
-          iOS : enregistre en AAC/MP4 si nécessaire.
-        </span>
+
+      {error && !panelVisible && (
+        <div className="onvm-recorder__panel onvm-recorder__notice">
+          <p className="onvm-recorder__error" role="alert">
+            {error}
+          </p>
+          <button
+            type="button"
+            onClick={() => setError("")}
+            aria-label="Fermer le message"
+          >
+            <FiX />
+          </button>
+        </div>
       )}
     </div>
   );

@@ -1,107 +1,149 @@
-.mobile-bottom-nav {
+/* ONVM — navigation sobre, fixe en bas */
+
+.onvm-bottom-nav {
   position: fixed;
-  left: 50%;
-  bottom: 10px;
-  transform: translateX(-50%);
-  width: calc(100% - 20px);
-  max-width: 560px;
-  height: 72px;
-  padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+  inset: auto 0 0;
+  z-index: 2000;
 
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(22px);
-  -webkit-backdrop-filter: blur(22px);
+  width: 100%;
+  margin: 0;
+  padding: 0 0 env(safe-area-inset-bottom, 0px);
 
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  border-radius: 28px;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+  box-sizing: border-box;
+}
 
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
-
-  display: flex;
+.onvm-bottom-nav .onvm-bottom-nav__inner {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
-  justify-content: space-between;
 
-  z-index: 9999;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  width: 100%;
+  max-width: 620px;
+  height: 66px;
+  margin: 0 auto;
+  padding: 0 8px;
+  box-sizing: border-box;
 }
 
-/* animation hide/show */
-.mobile-bottom-nav.hide {
-  transform: translate(-50%, 120%);
-  opacity: 0;
-}
-
-.mobile-bottom-nav.show {
-  transform: translate(-50%, 0);
-  opacity: 1;
-}
-
-/* boutons */
-.nav-btn {
+.onvm-bottom-nav .onvm-nav-button {
   position: relative;
-  border: none;
-  background: transparent;
-
-  color: #9a9a9a;
-  font-size: 24px;
-
-  width: 46px;
-  height: 46px;
-
-  border-radius: 18px;
-
   display: flex;
   align-items: center;
   justify-content: center;
 
-  transition: all 0.2s ease;
+  width: 100%;
+  min-width: 0;
+  height: 52px;
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  color: #a1a1a6;
+  font: inherit;
+  cursor: pointer;
+
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: color 150ms ease, transform 150ms ease;
 }
 
-/* actif (comme Threads) */
-.nav-btn.active {
-  color: #000;
-  background: rgba(0, 0, 0, 0.06);
+.onvm-bottom-nav .onvm-nav-button svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  stroke-width: 1.8;
 }
 
-/* hover mobile léger */
-.nav-btn:active {
+.onvm-bottom-nav .onvm-nav-button.is-active {
+  color: #111;
+}
+
+.onvm-bottom-nav .onvm-nav-button.is-active svg {
+  stroke-width: 2.2;
+}
+
+.onvm-bottom-nav .is-active .onvm-nav-heart,
+.onvm-bottom-nav .is-active .onvm-nav-home {
+  fill: currentColor;
+}
+
+/* Bouton central */
+.onvm-bottom-nav .onvm-nav-create__background {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 43px;
+  border-radius: 14px;
+  background: #f4f4f5;
+  color: #929298;
+  transition: background 150ms ease, color 150ms ease;
+}
+
+.onvm-bottom-nav .onvm-nav-create svg {
+  width: 29px;
+  height: 29px;
+  stroke-width: 1.8;
+}
+
+.onvm-bottom-nav .onvm-nav-create.is-active
+.onvm-nav-create__background {
+  background: #fff0f6;
+  color: #ff006e;
+}
+
+/* Petit point rose pour l’activité non lue */
+.onvm-bottom-nav .onvm-nav-icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.onvm-bottom-nav .onvm-nav-dot {
+  position: absolute;
+  top: -2px;
+  right: -3px;
+
+  width: 9px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #ff006e;
+  box-sizing: content-box;
+}
+
+.onvm-bottom-nav .onvm-nav-button:active {
   transform: scale(0.92);
 }
 
-/* bouton central */
-.create-btn {
-  background: #f2f2f2;
-  color: #666;
-
-  width: 58px;
-  height: 58px;
-
-  font-size: 26px;
-  border-radius: 20px;
-
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+.onvm-bottom-nav .onvm-nav-button:focus-visible {
+  outline: 2px solid #ff006e;
+  outline-offset: -4px;
 }
 
-/* badge notification style Threads */
-.notification-badge {
-  position: absolute;
-  top: 6px;
-  right: 6px;
+@media (hover: hover) {
+  .onvm-bottom-nav .onvm-nav-button:hover {
+    color: #111;
+  }
 
-  width: 12px;
-  height: 12px;
-
-  background: #ff3040;
-  border: 2px solid #fff;
-  border-radius: 50%;
-
-  font-size: 0;
-  padding: 0;
+  .onvm-bottom-nav .onvm-nav-create:hover
+  .onvm-nav-create__background {
+    background: #ebebee;
+    color: #111;
+  }
 }
 
-/* desktop centrage propre */
-@media (min-width: 700px) {
-  .mobile-bottom-nav {
-    bottom: 20px;
+@media (prefers-reduced-motion: reduce) {
+  .onvm-bottom-nav .onvm-nav-button,
+  .onvm-bottom-nav .onvm-nav-create__background {
+    transition: none;
   }
 }

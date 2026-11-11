@@ -27,6 +27,12 @@ import {
 } from 'react-icons/fa';
 
 
+import {
+  FiHeart,
+  FiMessageCircle,
+  FiRepeat,
+  FiSend,
+} from "react-icons/fi";
 
 
 const apiUrl = process.env.REACT_APP_API_URL;
@@ -81,7 +87,37 @@ function useLightbox(){
 
 
 
+function PublicationText({ text }) {
+  const [expanded, setExpanded] = useState(false);
 
+  if (!text) return null;
+
+  const value = String(text);
+  const canExpand = value.length > 280 || value.split("\n").length > 5;
+
+  return (
+    <div className="onvm-post-copy">
+      <p
+        className={`publication-text ${
+          canExpand && !expanded ? "onvm-text-collapsed" : ""
+        }`}
+      >
+        {value}
+      </p>
+
+      {canExpand && (
+        <button
+          type="button"
+          className="onvm-read-more"
+          aria-expanded={expanded}
+          onClick={() => setExpanded((previous) => !previous)}
+        >
+          {expanded ? "Réduire" : "Lire la suite"}
+        </button>
+      )}
+    </div>
+  );
+}
 
 const Publication = ({ user }) => {
   const [publications, setPublications] = useState([]);
@@ -530,7 +566,7 @@ const closeShareModal = () => {
   
   return (
    <div
-  className={`publication-page onvm-redesign ${
+ className={`publication-page onvm-redesign onvm-refined ${
     viewMode === 'shorts' ? 'onvm-shorts-mode' : ''
   }`}
 >
@@ -569,12 +605,14 @@ const closeShareModal = () => {
       <div className="publications-list">
       {displayedPublications.length > 0 ? (
   displayedPublications.map((publication, i) => (
-    <div
-      key={`${viewMode}-${publication.id}`}
-      className={`publication ${
-        viewMode === 'shorts' ? 'publication--short' : ''
-      }`}
-    >
+   <div
+  key={`${viewMode}-${publication.id}`}
+  id={`publication-${publication.id}`}
+  className={`publication ${
+    viewMode === 'shorts' ? 'publication--short' : ''
+  }`}
+>
+  
 {/* En-tête de la publication */}
 <div className="publication-header">
   {/* Vérification et affichage de la photo de profil */}
@@ -620,145 +658,178 @@ const closeShareModal = () => {
 
   
               {/* Contenu de la publication */}
-            <p className="publication-text">{publication.content}</p>
+           <PublicationText text={publication.content} />
 
   
  {/* Médias associés à la publication — supporte 1 ou plusieurs éléments + SWIPE */}
 {/* Médias associés à la publication — carrousel + lightbox */}
-{(() => {
+    {(() => {
   const mediaItems = normalizeMedia(publication.media).filter(
-  (item) => viewMode !== 'shorts' || item.kind === 'video'
-);
-  if (mediaItems.length === 0) return null;
+    (item) => viewMode !== "shorts" || item.kind === "video"
+  );
 
-  const idx = activeSlide[publication.id] ?? 0;
-  const lightboxItems = mediaItems.map(m => ({ url: m.url, type: m.type }));
+  if (!mediaItems.length) return null;
+
+  const index = Math.min(
+    activeSlide[publication.id] ?? 0,
+    mediaItems.length - 1
+  );
+
+  const item = mediaItems[index];
+
+  const openImage = () => {
+    // Le lecteur plein écran accepte les images et vidéos.
+    const visualItems = mediaItems.filter(
+      (entry) => entry.kind !== "audio"
+    );
+
+    const visualIndex = mediaItems
+      .slice(0, index)
+      .filter((entry) => entry.kind !== "audio").length;
+
+    open(
+      visualItems.map((entry) => ({
+        url: entry.url,
+        type: entry.kind,
+      })),
+      visualIndex
+    );
+  };
 
   return (
-    <div className="preview-section ig">
-      {mediaItems.length > 1 && (
-        <button
-          type="button"
-          className="nav left"
-          onClick={() => goSlide(publication.id, 'prev', mediaItems.length)}
-          aria-label="Précédent"
-        >
-          ‹
-        </button>
-      )}
-
+    <div className="onvm-post-media">
       <div
-        className="frame"
+        className="onvm-natural-media"
         onTouchStart={onTouchStartPub(publication.id)}
         onTouchMove={onTouchMovePub(publication.id)}
         onTouchEnd={onTouchEndPub(publication.id, mediaItems.length)}
       >
-        {mediaItems.map((m, i) => (
-          <div
-            key={`${m.url}-${i}`}
-            className={`slide ${i === idx ? 'is-active' : ''}`}
-            style={{ transform: `translateX(${(i - idx) * 100}%)` }}
+        {item.kind === "image" && (
+          <button
+            type="button"
+            className="onvm-image-button"
+            onClick={openImage}
+            aria-label={`Agrandir le média ${index + 1}`}
           >
-            {m.kind === 'image' && (
-              <img
-                className="media"
-                src={m.url}
-                alt={`media-${i + 1}`}
-                loading="lazy"
-                onClick={() => open(lightboxItems, i)}
-                style={{ cursor: 'zoom-in' }}
-              />
-            )}
-            {m.kind === 'video' && (
-            <video
-  key={`${viewMode}-${m.url}-${idx}`}
-  className="media"
-  src={m.url}
-  controls
-  playsInline
-  preload="metadata"
-  autoPlay={viewMode === 'shorts' && i === idx}
-  muted={viewMode === 'shorts'}
-  loop={viewMode === 'shorts'}
-  ref={(element) => {
-    if (element && i !== idx) element.pause();
-  }}
-/>
-            )}
-            {m.kind === 'audio' && (
-              <div className="audioWrap">
-                <audio src={m.url} controls />
-              </div>
-            )}
-          </div>
-        ))}
+            <img
+              key={item.url}
+              src={item.url}
+              alt={`Publication de ${publication.username || "cet utilisateur"}`}
+              loading="lazy"
+              decoding="async"
+            />
+          </button>
+        )}
+
+        {item.kind === "video" && (
+          <video
+            key={item.url}
+            src={item.url}
+            controls
+            playsInline
+            preload="metadata"
+            autoPlay={viewMode === "shorts"}
+            muted={viewMode === "shorts"}
+            loop={viewMode === "shorts"}
+          />
+        )}
+
+        {item.kind === "audio" && (
+          <audio
+            key={item.url}
+            src={item.url}
+            controls
+            preload="metadata"
+          />
+        )}
       </div>
 
       {mediaItems.length > 1 && (
-        <>
+        <div className="onvm-media-pagination">
           <button
             type="button"
-            className="nav right"
-            onClick={() => goSlide(publication.id, 'next', mediaItems.length)}
-            aria-label="Suivant"
+            onClick={() =>
+              goSlide(publication.id, "prev", mediaItems.length)
+            }
+            aria-label="Média précédent"
+          >
+            ‹
+          </button>
+
+          <span aria-live="polite">
+            {index + 1} / {mediaItems.length}
+          </span>
+
+          <button
+            type="button"
+            onClick={() =>
+              goSlide(publication.id, "next", mediaItems.length)
+            }
+            aria-label="Média suivant"
           >
             ›
           </button>
-
-          <div className="dots">
-            {mediaItems.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                className={`dot ${i === idx ? 'is-on' : ''}`}
-                onClick={() =>
-                  setActiveSlide((prev) => ({ ...prev, [publication.id]: i }))
-                }
-                aria-label={`Aller au média ${i + 1}`}
-              />
-            ))}
-          </div>
-        </>
+        </div>
       )}
     </div>
   );
 })()}
 
 
-
-  <div className="publication-footer">
-  <button className="footer-button" onClick={() => handleRetweet(publication.id)}>
-    <FaRetweet />
-    <span>{retweets[publication.id] || 0}</span>
+<div className="publication-footer">
+  <button
+    type="button"
+    className={`footer-button ${
+      publication.userHasLiked ? "liked" : ""
+    }`}
+    onClick={() => {
+      if (!publication.userHasLiked) handleLike(publication.id);
+    }}
+    aria-label={
+      publication.userHasLiked ? "Publication aimée" : "Aimer"
+    }
+    aria-pressed={Boolean(publication.userHasLiked)}
+  >
+    <FiHeart />
+    <span>{publication.likeCount || 0}</span>
   </button>
 
-
-<button
-  className={`footer-button ${publication.userHasLiked ? 'liked' : ''}`}
-  onClick={() => handleLike(publication.id, publication.userHasLiked)}
-  title={publication.userHasLiked ? "Je n'aime plus" : "J'aime"}
->
-  <FaHeart />
-  <span>{publication.likeCount || 0}</span>
-</button>
-
-
-
-
-
-  <button className="footer-button" onClick={() => setSelectedPublication(
-    selectedPublication === publication.id ? null : publication.id
-  )}>
-    <FaComment />
-   <span>{publication.comments?.length ?? 0}</span>
-
+  <button
+    type="button"
+    className="footer-button"
+    onClick={() =>
+      setSelectedPublication(
+        selectedPublication === publication.id ? null : publication.id
+      )
+    }
+    aria-label="Afficher les commentaires"
+    aria-expanded={selectedPublication === publication.id}
+  >
+    <FiMessageCircle />
+    <span>{publication.comments?.length ?? 0}</span>
   </button>
 
-  <button className="footer-button" onClick={() => handleSharePublication(publication.id)}>
-    <FaShare />
+  <button
+    type="button"
+    className="footer-button"
+    onClick={() => handleRetweet(publication.id)}
+    aria-label="Repartager"
+  >
+    <FiRepeat />
+    <span>
+      {publication.retweetsCount ?? retweets[publication.id] ?? 0}
+    </span>
+  </button>
+
+  <button
+    type="button"
+    className="footer-button"
+    onClick={() => handleSharePublication(publication.id)}
+    aria-label="Partager la publication"
+  >
+    <FiSend />
   </button>
 </div>
-
   
               {/* Section des commentaires */}
               {selectedPublication === publication.id && (
@@ -854,14 +925,6 @@ const closeShareModal = () => {
 
 
 
-{viewMode === 'feed' && (i + 1) % 4 === 0 && (
-  <div className="publication ad-publication">
-   <div className="ad-content">
-     <span className="ad-label">bonus </span>
-   {/* Publicité désactivée temporairement pour le diagnostic */}
-     </div>
-  </div>
-)}
 
 
             </div>

@@ -1,132 +1,360 @@
-.conversations-page {
-  min-height: 100vh;
+.onvm-inbox {
+  min-height: 100dvh;
+  padding: 22px 0 calc(100px + env(safe-area-inset-bottom));
   background: #fff;
-  padding: 18px 16px 90px;
-  font-family: Arial, sans-serif;
+  color: #171719;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-.conversation-topbar {
+.onvm-inbox .onvm-inbox-content {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 0 18px;
+  box-sizing: border-box;
+}
+
+.onvm-inbox .onvm-inbox-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
 }
 
-.conversation-topbar h2 {
-  font-size: 26px;
-  font-weight: 800;
+.onvm-inbox .onvm-inbox-header h1 {
   margin: 0;
+  color: #111;
+  font-size: 30px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  line-height: 1.2;
 }
 
-.icon-btn {
-  border: none;
-  background: transparent;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.conversation-search {
-  margin: 25px 0;
-  background: #f0f1f4;
-  padding: 15px 18px;
-  border-radius: 28px;
-  text-align: center;
-  color: #555;
-  font-size: 16px;
-}
-
-.conversation-tabs {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 18px;
-}
-
-.conversation-tabs button {
-  border: 1px solid #ddd;
-  background: white;
-  padding: 11px 20px;
-  border-radius: 25px;
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.conversation-tabs button.active {
-  background: #f1f1f1;
-  border-color: #f1f1f1;
-}
-
-.create-group-btn {
-  width: 100%;
-  border: none;
-  background: #111;
-  color: white;
-  padding: 14px;
-  border-radius: 18px;
-  font-weight: 700;
-  margin-bottom: 18px;
-}
-
-.conversation-list {
-  list-style: none;
+.onvm-inbox .onvm-inbox-compose {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   padding: 0;
-  margin: 0;
-}
-
-.conversation-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 13px 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #171719;
   cursor: pointer;
 }
 
-.conversation-avatar {
-  width: 62px;
-  height: 62px;
-  border-radius: 50%;
-  object-fit: cover;
-  background: #eee;
+.onvm-inbox .onvm-inbox-compose svg {
+  width: 23px;
+  height: 23px;
+  stroke-width: 1.7;
 }
 
-.conversation-info {
+/* Recherche */
+.onvm-inbox .onvm-inbox-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 13px;
+  border-radius: 14px;
+  background: #f5f5f6;
+  color: #929298;
+}
+
+.onvm-inbox .onvm-inbox-search > svg {
+  width: 19px;
+  height: 19px;
+  flex-shrink: 0;
+}
+
+.onvm-inbox .onvm-inbox-search input {
   flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #202024;
+  font: inherit;
+  font-size: 14px;
+}
+
+.onvm-inbox .onvm-inbox-search input::placeholder {
+  color: #929298;
+}
+
+.onvm-inbox .onvm-inbox-search input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+}
+
+.onvm-inbox .onvm-inbox-search button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #777780;
+  cursor: pointer;
+}
+
+.onvm-inbox .onvm-inbox-search:focus-within {
+  outline: 2px solid #e0e0e5;
+  outline-offset: 2px;
+}
+
+/* Filtres discrets */
+.onvm-inbox .onvm-inbox-filters {
+  display: flex;
+  gap: 8px;
+  margin: 18px 0 14px;
+  padding: 2px;
+  overflow-x: auto;
+}
+
+.onvm-inbox .onvm-inbox-filters button {
+  flex-shrink: 0;
+  min-height: 40px;
+  padding: 8px 17px;
+  border: 1px solid #ededf0;
+  border-radius: 12px;
+  background: #fff;
+  color: #777780;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.onvm-inbox .onvm-inbox-filters button.is-active {
+  border-color: #f3f3f5;
+  background: #f3f3f5;
+  color: #171719;
+  font-weight: 650;
+}
+
+/* Conversations sans cadres ni lignes */
+.onvm-inbox .onvm-inbox-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onvm-inbox .onvm-inbox-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  width: 100%;
+  min-height: 82px;
+  margin: 0;
+  padding: 13px 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.onvm-inbox .onvm-inbox-avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #f1f1f4;
+  color: #777780;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.onvm-inbox .onvm-inbox-avatar img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.onvm-inbox .onvm-inbox-message {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
   min-width: 0;
 }
 
-.conversation-name {
-  font-size: 17px;
-  font-weight: 800;
-  color: #111;
-}
-
-.conversation-preview {
-  margin-top: 4px;
-  color: #333;
-  font-size: 15px;
-  white-space: nowrap;
+.onvm-inbox .onvm-inbox-name,
+.onvm-inbox .onvm-inbox-preview {
+  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.conversation-right {
+
+.onvm-inbox .onvm-inbox-name {
+  color: #27272b;
+  font-size: 15px;
+  font-weight: 550;
+  line-height: 1.3;
+}
+
+.onvm-inbox .onvm-inbox-preview {
+  color: #909097;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.onvm-inbox .is-unread .onvm-inbox-name {
+  color: #111;
+  font-weight: 700;
+}
+
+.onvm-inbox .is-unread .onvm-inbox-preview {
+  color: #424249;
+  font-weight: 550;
+}
+
+.onvm-inbox .onvm-inbox-meta {
   display: flex;
+  flex-shrink: 0;
   flex-direction: column;
   align-items: flex-end;
-  gap: 10px;
+  gap: 9px;
+  min-width: 30px;
 }
 
-.conversation-time {
-  font-size: 13px;
-  color: #555;
+.onvm-inbox .onvm-inbox-time {
+  color: #9b9ba1;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
-.unread-dot {
-  width: 10px;
-  height: 10px;
-  background: #4d5cff;
+.onvm-inbox .onvm-inbox-unread {
+  width: 7px;
+  height: 7px;
   border-radius: 50%;
+  background: #ff006e;
 }
 
-.empty-conversations {
+/* Création de groupe */
+.onvm-inbox .onvm-inbox-create-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin: 0 0 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #171719;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onvm-inbox .onvm-inbox-create-group svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* États de chargement, vide et erreur */
+.onvm-inbox .onvm-inbox-status {
+  padding: 24px 0;
+  color: #85858c;
+  font-size: 14px;
   text-align: center;
-  color: #777;
-  margin-top: 40px;
+}
+
+.onvm-inbox .onvm-inbox-empty {
+  padding: 60px 12px;
+  text-align: center;
+}
+
+.onvm-inbox .onvm-inbox-empty h2 {
+  max-width: 300px;
+  margin: 0 auto 10px;
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.3px;
+}
+
+.onvm-inbox .onvm-inbox-empty p {
+  max-width: 290px;
+  margin: 0 auto;
+  color: #898991;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.onvm-inbox .onvm-inbox-empty button {
+  min-height: 44px;
+  margin-top: 22px;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: #171719;
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onvm-inbox .onvm-inbox-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+  color: #a52c48;
+  font-size: 13px;
+}
+
+.onvm-inbox .onvm-inbox-error button {
+  min-height: 40px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.onvm-inbox .onvm-inbox-content button:focus-visible {
+  outline: 2px solid #ff006e;
+  outline-offset: 2px;
+}
+
+.onvm-inbox .onvm-inbox-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .onvm-inbox .onvm-inbox-row:hover,
+  .onvm-inbox .onvm-inbox-compose:hover {
+    background: #fafafa;
+  }
 }
