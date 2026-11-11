@@ -11,3 +11,9 @@ public/apk/
 
 # Fichiers APK lourds (à ignorer pour GitHub)
 *.apk
+# Dépendances et fichiers locaux
+node_modules/
+build/
+.env
+.env.local
+.env.production.local
