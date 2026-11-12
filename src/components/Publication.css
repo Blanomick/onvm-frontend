@@ -1421,3 +1421,12 @@ body {
     font-size: 14px;
   }
 }
+
+/* Aligner les commentaires sous le contenu de la publication */
+.publication-page.onvm-refined .publication > .onvm-comments {
+  grid-column: 2 / -1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  justify-self: stretch;
+}

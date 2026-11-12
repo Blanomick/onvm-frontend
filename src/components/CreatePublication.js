@@ -5,13 +5,13 @@ import {
   FiX,
   FiImage,
   FiUserPlus,
-  FiChevronLeft,
-  FiChevronRight,
+  
   FiEye,
   FiEdit3,
 } from "react-icons/fi";
 
 import ProfileAvatar from "./ProfileAvatar";
+import PostMediaCarousel from "./PostMediaCarousel";
 import "./CreatePublication.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
@@ -50,7 +50,7 @@ export default function CreatePublication({ currentUser }) {
   const mountedRef = useRef(false);
 
   const [attachments, setAttachments] = useState([]);
-  const [active, setActive] = useState(0);
+ 
   const [caption, setCaption] = useState("");
   const [preview, setPreview] = useState(false);
 
@@ -71,7 +71,6 @@ export default function CreatePublication({ currentUser }) {
 
   const userId = currentUser?.id;
   const searchTerm = query.replace(/^@/, "").trim();
-  const currentMedia = attachments[active];
 
   const mentions = people.map((person) => `@${person.username}`).join(" ");
   const publicationText = [caption.trim(), mentions].filter(Boolean).join("\n\n");
@@ -204,10 +203,9 @@ export default function CreatePublication({ currentUser }) {
       });
     }
 
-    if (added.length) {
-      setAttachments((previous) => [...previous, ...added]);
-      setActive(attachments.length);
-    }
+ if (added.length) {
+  setAttachments((previous) => [...previous, ...added]);
+}
 
     setFileError([...new Set(errors)].join(" "));
     setPublishError("");
@@ -226,10 +224,7 @@ export default function CreatePublication({ currentUser }) {
       previous.filter((_, position) => position !== index)
     );
 
-    setActive((position) =>
-      Math.max(0, position >= index ? position - 1 : position)
-    );
-
+   
     setFileError("");
   }
 
@@ -244,12 +239,7 @@ export default function CreatePublication({ currentUser }) {
     setShowPeople(false);
   }
 
-  function changeMedia(direction) {
-    setActive((position) => {
-      const count = attachments.length;
-      return count ? (position + direction + count) % count : 0;
-    });
-  }
+ 
 
   async function publish() {
     if (uploadLockRef.current || !canPublish) return;
@@ -387,76 +377,19 @@ export default function CreatePublication({ currentUser }) {
           />
         )}
 
-        {currentMedia && (
-          <div className="onvm-compose__media-block">
-            <div className="onvm-compose__media">
-              {currentMedia.kind === "image" && (
-                <img
-                  src={currentMedia.url}
-                  alt={`Média ${active + 1} : ${currentMedia.file.name}`}
-                />
-              )}
-
-              {currentMedia.kind === "video" && (
-                <video
-                  key={currentMedia.url}
-                  src={currentMedia.url}
-                  controls
-                  playsInline
-                  preload="metadata"
-                />
-              )}
-
-              {currentMedia.kind === "audio" && (
-                <div className="onvm-compose__audio">
-                  <span>{currentMedia.file.name}</span>
-                  <audio
-                    key={currentMedia.url}
-                    src={currentMedia.url}
-                    controls
-                    preload="metadata"
-                  />
-                </div>
-              )}
-
-              {!preview && (
-                <button
-                  type="button"
-                  className="onvm-compose__remove-media"
-                  onClick={() => removeFile(active)}
-                  disabled={publishing}
-                  aria-label={`Retirer ${currentMedia.file.name}`}
-                >
-                  <FiX aria-hidden="true" />
-                </button>
-              )}
-            </div>
-
-            {attachments.length > 1 && (
-              <div className="onvm-compose__carousel">
-                <button
-                  type="button"
-                  onClick={() => changeMedia(-1)}
-                  aria-label="Média précédent"
-                >
-                  <FiChevronLeft />
-                </button>
-
-                <span aria-live="polite">
-                  {active + 1} / {attachments.length}
-                </span>
-
-                <button
-                  type="button"
-                  onClick={() => changeMedia(1)}
-                  aria-label="Média suivant"
-                >
-                  <FiChevronRight />
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+       {attachments.length > 0 && (
+  <div className="onvm-compose__media-block">
+    <PostMediaCarousel
+      items={attachments.map((attachment) => ({
+        url: attachment.url,
+        kind: attachment.kind,
+        name: attachment.file.name,
+      }))}
+      onRemove={preview ? undefined : removeFile}
+      disabled={publishing}
+    />
+  </div>
+)}
 
         {!preview && (
           <>

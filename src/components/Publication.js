@@ -5,7 +5,8 @@ import MainNavigation from './MainNavigation';
 import AdMultiplex from '../components/AdMultiplex';
 import { useNavigate, useLocation } from "react-router-dom";
 import BottomNav from './BottomNav';
-
+import CommentsSection from './CommentsSection';
+import PostMediaCarousel from "./PostMediaCarousel";
 import {
   FaRetweet,
   FaComment,
@@ -130,18 +131,11 @@ const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [shareModal, setShareModal] = useState(null);
   const [usersList, setUsersList] = useState([]);
-  const [commentContent, setCommentContent] = useState('');
+  
   const [selectedPublication, setSelectedPublication] = useState(null);
-  const [isRecording, setIsRecording] = useState(false);
-  const [audioBlob, setAudioBlob] = useState(null);
+
   const [showBottomNav, setShowBottomNav] = useState(true);
   const [showMenu, setShowMenu] = useState(false);
-// index actif par publication pour le carousel
-const [activeSlide, setActiveSlide] = useState({});
-// Refs pour mémoriser le point de départ/déplacement par publication
-const touchStartXRef = useRef({});
-const touchDeltaXRef = useRef({});
-
 
  
   const navigate = useNavigate();
@@ -173,36 +167,7 @@ useEffect(() => {
 
   const toggleMenu = () => setShowMenu(!showMenu);
 
-  const startRecording = async () => {
-    if (!navigator.mediaDevices) {
-      alert("L'enregistrement audio n'est pas pris en charge sur ce navigateur.");
-      return;
-    }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      const chunks = [];
-      mediaRecorderRef.current.ondataavailable = (e) => chunks.push(e.data);
-      mediaRecorderRef.current.onstop = () => {
-        const blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
-        setAudioBlob(blob);
-      };
-      setIsRecording(true);
-      mediaRecorderRef.current.start();
-      setTimeout(() => stopRecording(), 5000);
-    } catch (error) {
-      console.error('[ERREUR] Impossible de démarrer l’enregistrement audio:', error);
-    }
-  };
-
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop();
-    }
-  };
-
-
+ 
 
 const fetchPublications = useCallback(async () => {
   try {
@@ -307,39 +272,6 @@ const displayedPublications =
     ? videoPublications.slice(currentShortIndex, currentShortIndex + 1)
     : publications;
 
-// Navigation dans le carousel par publication
-const goSlide = (pubId, dir, total) => {
-  setActiveSlide((prev) => {
-    const a = prev[pubId] ?? 0;
-    const n = total || 0;
-    if (n <= 0) return prev;
-    const next = (a + (dir === "next" ? 1 : -1) + n) % n;
-    return { ...prev, [pubId]: next };
-  });
-};
-
-
-// Handlers tactiles par publication (swipe)
-const onTouchStartPub = (pubId) => (e) => {
-  touchStartXRef.current[pubId] = e.touches[0].clientX;
-  touchDeltaXRef.current[pubId] = 0;
-};
-
-const onTouchMovePub = (pubId) => (e) => {
-  const start = touchStartXRef.current[pubId] || 0;
-  touchDeltaXRef.current[pubId] = e.touches[0].clientX - start;
-};
-
-const onTouchEndPub = (pubId, total) => () => {
-  const dx = touchDeltaXRef.current[pubId] || 0;
-  if (dx > 50) {
-    goSlide(pubId, 'prev', total);
-  } else if (dx < -50) {
-    goSlide(pubId, 'next', total);
-  }
-  touchStartXRef.current[pubId] = 0;
-  touchDeltaXRef.current[pubId] = 0;
-};
 
 
 
@@ -389,32 +321,6 @@ const onTouchEndPub = (pubId, total) => () => {
 
 
 
-
-  const handleComment = async (publicationId) => {
-    const formData = new FormData();
-
-    if (!commentContent && !audioBlob && !media) {
-      alert("Veuillez ajouter du texte, une image, une vidéo ou un fichier audio.");
-      return;
-    }
-
-    formData.append('userId', user.id);
-    if (commentContent) formData.append('comment', commentContent);
-    if (audioBlob) formData.append('audio', audioBlob, 'comment_audio.ogg');
-    if (media) formData.append('media', media);
-
-    try {
-      await axios.post(`${apiUrl}/api/publications/${publicationId}/comment`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      setCommentContent('');
-      setAudioBlob(null);
-      setMedia(null);
-      fetchPublications();
-    } catch (err) {
-      console.error("[ERREUR] Erreur lors de l'ajout du commentaire:", err);
-    }
-  };
 
 const handleDeletePublication = async (publicationId) => {
   if (window.confirm('Êtes-vous sûr de vouloir supprimer cette publication ?')) {
@@ -663,118 +569,42 @@ const closeShareModal = () => {
   
  {/* Médias associés à la publication — supporte 1 ou plusieurs éléments + SWIPE */}
 {/* Médias associés à la publication — carrousel + lightbox */}
-    {(() => {
+   
+   {(() => {
   const mediaItems = normalizeMedia(publication.media).filter(
     (item) => viewMode !== "shorts" || item.kind === "video"
   );
 
   if (!mediaItems.length) return null;
 
-  const index = Math.min(
-    activeSlide[publication.id] ?? 0,
-    mediaItems.length - 1
-  );
-
-  const item = mediaItems[index];
-
-  const openImage = () => {
-    // Le lecteur plein écran accepte les images et vidéos.
+  function openPhoto(index) {
     const visualItems = mediaItems.filter(
-      (entry) => entry.kind !== "audio"
+      (item) => item.kind !== "audio"
     );
 
     const visualIndex = mediaItems
       .slice(0, index)
-      .filter((entry) => entry.kind !== "audio").length;
+      .filter((item) => item.kind !== "audio").length;
 
     open(
-      visualItems.map((entry) => ({
-        url: entry.url,
-        type: entry.kind,
+      visualItems.map((item) => ({
+        url: item.url,
+        type: item.kind,
       })),
       visualIndex
     );
-  };
+  }
 
   return (
     <div className="onvm-post-media">
-      <div
-        className="onvm-natural-media"
-        onTouchStart={onTouchStartPub(publication.id)}
-        onTouchMove={onTouchMovePub(publication.id)}
-        onTouchEnd={onTouchEndPub(publication.id, mediaItems.length)}
-      >
-        {item.kind === "image" && (
-          <button
-            type="button"
-            className="onvm-image-button"
-            onClick={openImage}
-            aria-label={`Agrandir le média ${index + 1}`}
-          >
-            <img
-              key={item.url}
-              src={item.url}
-              alt={`Publication de ${publication.username || "cet utilisateur"}`}
-              loading="lazy"
-              decoding="async"
-            />
-          </button>
-        )}
-
-        {item.kind === "video" && (
-          <video
-            key={item.url}
-            src={item.url}
-            controls
-            playsInline
-            preload="metadata"
-            autoPlay={viewMode === "shorts"}
-            muted={viewMode === "shorts"}
-            loop={viewMode === "shorts"}
-          />
-        )}
-
-        {item.kind === "audio" && (
-          <audio
-            key={item.url}
-            src={item.url}
-            controls
-            preload="metadata"
-          />
-        )}
-      </div>
-
-      {mediaItems.length > 1 && (
-        <div className="onvm-media-pagination">
-          <button
-            type="button"
-            onClick={() =>
-              goSlide(publication.id, "prev", mediaItems.length)
-            }
-            aria-label="Média précédent"
-          >
-            ‹
-          </button>
-
-          <span aria-live="polite">
-            {index + 1} / {mediaItems.length}
-          </span>
-
-          <button
-            type="button"
-            onClick={() =>
-              goSlide(publication.id, "next", mediaItems.length)
-            }
-            aria-label="Média suivant"
-          >
-            ›
-          </button>
-        </div>
-      )}
+      <PostMediaCarousel
+        items={mediaItems}
+        onOpen={openPhoto}
+        autoPlay={viewMode === "shorts"}
+      />
     </div>
   );
 })()}
-
 
 <div className="publication-footer">
   <button
@@ -832,97 +662,24 @@ const closeShareModal = () => {
 </div>
   
               {/* Section des commentaires */}
-              {selectedPublication === publication.id && (
-                <div className="comments-section">
-                {publication.comments.map((comment) => (
-  <div key={comment.id} className="comment">
-  
-   <img
-  
-  src={comment.profilePicture || '/default-profile.png'}
-  alt="Profil"
-  className="comment-profile-picture"
-/>
-
-
-    <div className="comment-content">
-      <span className="comment-username">{comment.username}</span>
-      <p className="comment-text">{comment.comment}</p>
-
-      {comment.media && (
-        <div className="comment-media">
-          {comment.media.endsWith('.mp4') || comment.media.endsWith('.webm') ? (
-            <video src={comment.media} controls />
-          ) : comment.media.endsWith('.ogg') || comment.media.endsWith('.mp3') ? (
-            <audio src={comment.media} controls />
-          ) : (
-            <img src={comment.media} alt="Comment media" />
-          )}
-        </div>
-      )}
-    </div>
-  </div>
-))}
-
-
-
-
-<div className="add-comment">
-  {/* Zone de texte pour le commentaire */}
-  <textarea
-    value={commentContent}
-    onChange={(e) => setCommentContent(e.target.value)}
-    placeholder="Écrire un commentaire..."
-    className="comment-textarea"
-  ></textarea>
-
-  {/* Section pour ajouter des médias (image/vidéo/audio) */}
-  <div className="comment-media-section">
-    <label htmlFor={`comment-image-${publication.id}`} className="media-icon">
-      <FaImage title="Ajouter une image" />
-    </label>
-    <input
-      id={`comment-image-${publication.id}`}
-      type="file"
-      accept="image/*"
-      style={{ display: 'none' }}
-      onChange={(e) => setMedia(e.target.files[0])}
-    />
-
-    <label htmlFor={`comment-video-${publication.id}`} className="media-icon">
-      <FaVideo title="Ajouter une vidéo" />
-    </label>
-    <input
-      id={`comment-video-${publication.id}`}
-      type="file"
-      accept="video/*"
-      style={{ display: 'none' }}
-      onChange={(e) => setMedia(e.target.files[0])}
-    />
-
-    <button
-      onClick={startRecording}
-      disabled={isRecording}
-      className={`microphone-icon ${isRecording ? 'recording' : ''}`}
-      title="Enregistrer un audio"
-    >
-      <FaMicrophone />
-    </button>
-  </div>
-
-  {/* Bouton pour envoyer le commentaire */}
-  <button
-    onClick={() => handleComment(publication.id)}
-    className="send-comment-button"
-  >
-    Envoyer
-  </button>
-</div>
-
-                  
-                </div>
-              )}
-
+              {/* Section des commentaires */}
+{selectedPublication === publication.id && (
+  <CommentsSection
+    key={publication.id}
+    publication={publication}
+    user={user}
+    onClose={() => setSelectedPublication(null)}
+    onUpdated={(comments) => {
+      setPublications((previous) =>
+        previous.map((post) =>
+          post.id === publication.id
+            ? { ...post, comments }
+            : post
+        )
+      );
+    }}
+  />
+)}
 
 
 
