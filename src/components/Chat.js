@@ -10,7 +10,10 @@ import {
   FiMoreHorizontal as FaEllipsisH,
   FiX as FaTimes,
 } from "react-icons/fi";
-
+import {
+  useMessageStatus,
+  MessageReceipt,
+} from "./MessagingProvider";
 import ProfileAvatar from "./ProfileAvatar";
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -53,15 +56,22 @@ function normalizeMessage(m) {
 const Chat = ({ currentUser }) => {
   const navigate = useNavigate();
   const calls = useCalls();
-  const fileInputRef = useRef(null);
-  const messagesEndRef = useRef(null);
+const fileInputRef = useRef(null);
+const messagesEndRef = useRef(null);
+const messagesViewportRef = useRef(null);
+const sendLockRef = useRef(false);
 
   const { id, groupId } = useParams();
 
   const isGroup = Boolean(groupId);
   const conversationId = isGroup ? null : id;
   const currentGroupId = isGroup ? groupId : null;
-  const activeChatId = isGroup ? `group_${currentGroupId}` : conversationId;
+ const activeChatId = isGroup
+  ? `group_${currentGroupId}`
+  : conversationId;
+
+const activeChatRef = useRef(activeChatId);
+activeChatRef.current = activeChatId;
 
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState('');
@@ -69,7 +79,15 @@ const Chat = ({ currentUser }) => {
   const [chatUser, setChatUser] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
  
-  const [sending, setSending] = useState(false);
+ const [sending, setSending] = useState(false);
+const [sendError, setSendError] = useState("");
+const messageStatus = useMessageStatus({
+  isGroup,
+  chatId: isGroup ? currentGroupId : conversationId,
+  currentUserId: currentUser?.id,
+  messages,
+  viewportRef: messagesViewportRef,
+});
 
   useEffect(() => {
     document.body.classList.add('hide-logo-bar');
@@ -80,42 +98,62 @@ const Chat = ({ currentUser }) => {
   }, []);
 
   useEffect(() => {
-    if (!currentUser?.id || !activeChatId) return;
+  if (!currentUser?.id || !activeChatId) return;
 
-    socket.emit('chat:join', {
+  const joinChat = () => {
+    socket.emit("chat:join", {
       chatId: activeChatId,
       userId: currentUser.id,
     });
+  };
 
-    const handleIncomingMessage = (message) => {
-  const msg = normalizeMessage({
-    ...message,
-    sender_id: message.sender_id ?? message.user_id,
-  });
+  const handleIncomingMessage = (message) => {
+    const belongsToChat = isGroup
+      ? String(message.group_id) === String(currentGroupId)
+      : message.group_id == null &&
+        String(message.conversation_id) === String(conversationId);
 
-  setMessages((previous) => {
-    const exists =
-      msg.id != null &&
-      previous.some((item) => String(item.id) === String(msg.id));
+    if (!belongsToChat) return;
 
-    return exists ? previous : [...previous, msg];
-  });
+    const msg = normalizeMessage({
+      ...message,
+      sender_id: message.sender_id ?? message.user_id,
+    });
 
-  scrollToBottom();
-};
+    if (msg.id == null) return;
 
-    socket.on('chat:message', handleIncomingMessage);
+    setMessages((previous) => {
+      const exists = previous.some(
+        (item) => String(item.id) === String(msg.id)
+      );
 
-    return () => {
-      socket.emit('chat:leave', {
-        chatId: activeChatId,
-        userId: currentUser.id,
-      });
+      return exists ? previous : [...previous, msg];
+    });
+  };
 
-      socket.off('chat:message', handleIncomingMessage);
-    };
-  }, [activeChatId, currentUser?.id]);
+  socket.on("connect", joinChat);
+  socket.on("chat:message", handleIncomingMessage);
 
+  if (socket.connected) {
+    joinChat();
+  }
+
+  return () => {
+    socket.off("connect", joinChat);
+    socket.off("chat:message", handleIncomingMessage);
+
+    socket.emit("chat:leave", {
+      chatId: activeChatId,
+      userId: currentUser.id,
+    });
+  };
+}, [
+  activeChatId,
+  currentUser?.id,
+  isGroup,
+  currentGroupId,
+  conversationId,
+]);
  
 useEffect(() => {
   if (!currentUser?.id || (!conversationId && !currentGroupId)) {
@@ -200,6 +238,54 @@ useEffect(() => {
   };
 }, [conversationId, currentGroupId, currentUser?.id, isGroup]);
 
+
+useEffect(() => {
+  setGroupMembers([]);
+
+  if (!isGroup || !currentGroupId || !currentUser?.id) {
+    return;
+  }
+
+  const controller = new AbortController();
+  const token = localStorage.getItem("token");
+
+  async function loadMembers() {
+    try {
+      const response = await fetch(
+        `${apiUrl}/api/groups/${currentGroupId}/members`,
+        {
+          signal: controller.signal,
+          headers: token
+            ? { Authorization: `Bearer ${token}` }
+            : {},
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Chargement des membres impossible.");
+      }
+
+      const data = await response.json();
+
+      if (
+        !controller.signal.aborted &&
+        Array.isArray(data)
+      ) {
+        setGroupMembers(data);
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        console.error("[GROUPE] Chargement des membres :", error);
+      }
+    }
+  }
+
+  loadMembers();
+
+  return () => controller.abort();
+}, [isGroup, currentGroupId, currentUser?.id]);
+
+
   const scrollToBottom = () => {
     setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -218,60 +304,103 @@ useEffect(() => {
     setMedia(file);
   };
 
+
   const handleSend = async () => {
-    if ((!content.trim() && !media) || sending) return;
+  if (
+    sendLockRef.current ||
+    !currentUser?.id ||
+    (!content.trim() && !media)
+  ) {
+    return;
+  }
 
-    const textToSend = content.trim();
+  sendLockRef.current = true;
+  setSending(true);
+  setSendError("");
 
-    const formData = new FormData();
+  const originalContent = content;
+  const selectedMedia = media;
+  const destination = activeChatId;
 
-    if (isGroup) {
-      formData.append('group_id', currentGroupId);
-    } else {
-      formData.append('conversation_id', conversationId);
+  const formData = new FormData();
+
+  if (isGroup) {
+    formData.append("group_id", currentGroupId);
+  } else {
+    formData.append("conversation_id", conversationId);
+  }
+
+  formData.append("sender_id", currentUser.id);
+  formData.append("content", originalContent.trim());
+
+  if (selectedMedia) {
+    formData.append("media", selectedMedia);
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch(`${apiUrl}/api/messages/send`, {
+      method: "POST",
+      headers: token
+        ? { Authorization: `Bearer ${token}` }
+        : {},
+      body: formData,
+    });
+
+    const data = await response.json().catch(() => null);
+
+    if (!response.ok) {
+      throw new Error(
+        data?.error || "Le message n’a pas pu être envoyé."
+      );
     }
 
-    formData.append('sender_id', currentUser.id);
-
-    if (textToSend) formData.append('content', textToSend);
-    if (media) formData.append('media', media);
-
-    try {
-      setSending(true);
-
-      const optimisticMsg = normalizeMessage({
-        id: `temp-${Date.now()}`,
-        conversation_id: conversationId,
-        group_id: currentGroupId,
-        sender_id: currentUser.id,
-        type: 'text',
-        content: textToSend,
-        media: media ? URL.createObjectURL(media) : null,
-        created_at: new Date().toISOString(),
-      });
-
-      setMessages((prev) => [...prev, optimisticMsg]);
-
-      socket.emit('chat:message', {
-        chatId: activeChatId,
-        message: optimisticMsg,
-      });
-
-      setContent('');
-      setMedia(null);
-
-      await fetch(`${apiUrl}/api/messages/send`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      scrollToBottom();
-    } catch (err) {
-      console.error('[ERREUR] Envoi message :', err);
-    } finally {
-      setSending(false);
+    if (data?.id == null) {
+      throw new Error("Le serveur n’a pas confirmé le message.");
     }
-  };
+
+    // L’utilisateur peut avoir changé de discussion pendant l’envoi.
+    if (activeChatRef.current !== destination) {
+      return;
+    }
+
+    const savedMessage = normalizeMessage({
+      ...data,
+      sender_id: data.sender_id ?? data.user_id,
+    });
+
+    // Socket.IO peut avoir déjà transmis ce même message.
+    setMessages((previous) => {
+      const exists = previous.some(
+        (message) => String(message.id) === String(savedMessage.id)
+      );
+
+      return exists ? previous : [...previous, savedMessage];
+    });
+
+    // Ne pas effacer un nouveau brouillon saisi pendant l’envoi.
+    setContent((value) =>
+      value === originalContent ? "" : value
+    );
+
+    setMedia((value) =>
+      value === selectedMedia ? null : value
+    );
+
+    scrollToBottom();
+  } catch (error) {
+    if (activeChatRef.current === destination) {
+      setSendError(
+        error.message || "Envoi impossible. Réessaie."
+      );
+    }
+  } finally {
+    sendLockRef.current = false;
+    setSending(false);
+  }
+};
+ 
 
   const handleVoiceSent = (payload) => {
   if (!payload?.id) return;
@@ -346,11 +475,37 @@ useEffect(() => {
 </div>
          <div className="chat-header-text">
   <strong>{title}</strong>
-
+<small
+  className={`onvm-presence ${
+    messageStatus.available &&
+    messageStatus.onlineUserIds.some(
+      (id) => Number(id) !== Number(currentUser.id)
+    )
+      ? "is-online"
+      : ""
+  }`}
+  role="status"
+>
+  {!messageStatus.available
+    ? "Présence indisponible"
+    : isGroup
+      ? `${
+          messageStatus.onlineUserIds.filter(
+            (id) => Number(id) !== Number(currentUser.id)
+          ).length
+        } autre(s) membre(s) en ligne`
+      : messageStatus.onlineUserIds.some(
+          (id) => Number(id) !== Number(currentUser.id)
+        )
+        ? "En ligne"
+        : "Hors ligne"}
+</small>
   <span>
     {isGroup
-      ? `${groupMembers.length || 1} membre${groupMembers.length > 1 ? "s" : ""}`
-      : "Conversation"}
+  ? groupMembers.length > 0
+    ? `${groupMembers.length} membre${groupMembers.length > 1 ? "s" : ""}`
+    : "Discussion de groupe"
+  : "Conversation"}
   </span>
 
   <small
@@ -408,7 +563,10 @@ useEffect(() => {
 
       
 
-      <main className="mobile-chat-messages">
+     <main
+  className="mobile-chat-messages"
+  ref={messagesViewportRef}
+>
         {messages.length === 0 && (
           <div className="chat-empty-state">
             Aucun message pour le moment.
@@ -424,12 +582,22 @@ useEffect(() => {
             msg.content?.includes('<audio');
 
           return (
-            <div
-              key={`${msg.id}-${index}`}
-              className={`mobile-message-row ${isOwn ? 'sent' : 'received'}`}
-            >
-              <div className="mobile-message-bubble">
-                {msg.content && (
+           <div
+  key={`${msg.id}-${index}`}
+  className={`mobile-message-row ${isOwn ? "sent" : "received"}`}
+  data-receipt-id={msg.id}
+  data-receipt-incoming={!isOwn ? "true" : "false"}
+>
+             <div className="mobile-message-bubble">
+  {isGroup && !isOwn && (
+    <strong className="group-message-author">
+      {groupMembers.find(
+        (member) => String(member.id) === String(msg.sender_id)
+      )?.username || "Membre"}
+    </strong>
+  )}
+
+  {msg.content && (
                   <div
                     className="message-html"
                     dangerouslySetInnerHTML={{ __html: msg.content }}
@@ -452,7 +620,19 @@ useEffect(() => {
                   </div>
                 )}
 
-                {hasHtmlMedia && <span className="story-message-label">Story</span>}
+                {hasHtmlMedia && (
+  <span className="story-message-label">Story</span>
+)}
+
+{isOwn &&
+  Number.isSafeInteger(Number(msg.id)) &&
+  Number(msg.id) > 0 && (
+    <MessageReceipt
+      messageId={msg.id}
+      readers={messageStatus.readers}
+      isGroup={isGroup}
+    />
+  )}
               </div>
             </div>
           );
@@ -470,7 +650,13 @@ useEffect(() => {
         </div>
       )}
 
-      <footer className="mobile-chat-input-bar">
+      {sendError && (
+  <p className="chat-send-error" role="alert">
+    {sendError}
+  </p>
+)}
+
+<footer className="mobile-chat-input-bar">
         <input
           ref={fileInputRef}
           type="file"

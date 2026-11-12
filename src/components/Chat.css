@@ -755,3 +755,67 @@
     padding-left: 8px;
   }
 }
+
+/* Auteur d’un message dans un groupe */
+.group-message-author {
+  display: block;
+  margin-bottom: 5px;
+  color: #595961;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Erreur d’envoi : le brouillon est conservé */
+.chat-send-error {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 10px 16px;
+  background: #fff0f0;
+  color: #a51f2b;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.onvm-presence {
+  display: block;
+  margin-top: 3px;
+  color: #85858d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.onvm-presence.is-online {
+  color: #198754;
+}
+
+.onvm-message-receipt {
+  display: block;
+  margin-top: 7px;
+  color: inherit;
+  opacity: 0.65;
+  font-size: 10px;
+  line-height: 1.4;
+  text-align: right;
+}
+
+.onvm-message-receipt.is-read {
+  opacity: 0.95;
+}
+
+.onvm-readers-toggle {
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.onvm-readers-names {
+  display: block;
+  max-width: 230px;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}

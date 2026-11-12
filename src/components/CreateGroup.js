@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CreateGroup.css';
 
 function CreateGroup() {
   const navigate = useNavigate();
-
+const submitLockRef = useRef(false);
+const createdGroupIdRef = useRef(null);
+const addedMemberIdsRef = useRef(new Set());
   const [groupName, setGroupName] = useState('');
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
@@ -22,26 +24,67 @@ function CreateGroup() {
 
   // 🔍 RECHERCHE UTILISATEURS
   useEffect(() => {
-    if (!search.trim()) return;
+  const query = search.trim().toLocaleLowerCase("fr");
 
-    const fetchUsers = async () => {
-      try {
-        const res = await fetch(`${API_URL}/api/users`);
-        const data = await res.json();
+  setUsers([]);
 
-        const filtered = data.filter(u =>
-          u.username.toLowerCase().includes(search.toLowerCase())
-        );
+  if (!query) return;
 
-        setUsers(filtered);
-      } catch (err) {
-        console.error(err);
+  const controller = new AbortController();
+
+  const timer = setTimeout(async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      const response = await fetch(`${API_URL}/api/users`, {
+        signal: controller.signal,
+        headers: token
+          ? { Authorization: `Bearer ${token}` }
+          : {},
+      });
+
+      if (!response.ok) {
+        throw new Error("Impossible de rechercher les utilisateurs.");
       }
-    };
 
-    fetchUsers()
-    }, [search, API_URL]);
+      const data = await response.json();
 
+      if (!Array.isArray(data)) {
+        throw new Error("Liste d’utilisateurs invalide.");
+      }
+
+      let savedUser = null;
+
+      try {
+        savedUser = JSON.parse(localStorage.getItem("user") || "null");
+      } catch {
+        // La vérification de session sera faite lors de la création.
+      }
+
+      const filtered = data.filter((person) => {
+        const isCreator = String(person.id) === String(savedUser?.id);
+        const matches = String(person.username || "")
+          .toLocaleLowerCase("fr")
+          .includes(query);
+
+        return !isCreator && matches;
+      });
+
+      if (!controller.signal.aborted) {
+        setUsers(filtered);
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        setMessage(error.message);
+      }
+    }
+  }, 300);
+
+  return () => {
+    clearTimeout(timer);
+    controller.abort();
+  };
+}, [search, API_URL]);
   // 📷 PHOTO
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
@@ -52,10 +95,17 @@ function CreateGroup() {
   };
 
   // ➕ AJOUT UTILISATEUR
-  const addUser = (user) => {
-    if (selectedUsers.find(u => u.id === user.id)) return;
-    setSelectedUsers(prev => [...prev, user]);
-  };
+const addUser = (user) => {
+  if (loading || createdGroupIdRef.current) return;
+
+  setSelectedUsers((previous) => {
+    const alreadySelected = previous.some(
+      (member) => String(member.id) === String(user.id)
+    );
+
+    return alreadySelected ? previous : [...previous, user];
+  });
+};
 
   // ❌ SUPPRIMER UTILISATEUR
   const removeUser = (id) => {
@@ -64,58 +114,114 @@ function CreateGroup() {
 
   // 🚀 CREATION GROUPE
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!groupName.trim()) {
-      setMessage('Nom du groupe obligatoire');
-      return;
-    }
+  if (submitLockRef.current) return;
 
-    try {
-      setLoading(true);
+  if (!groupName.trim()) {
+    setMessage("Le nom du groupe est obligatoire.");
+    return;
+  }
 
-      const user = JSON.parse(localStorage.getItem('user'));
+  let user;
 
-      if (!user?.id) {
-        navigate('/auth');
-        return;
-      }
+  try {
+    user = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    user = null;
+  }
 
-      // 🔥 CREATION GROUPE
+  if (!user?.id) {
+    navigate("/auth");
+    return;
+  }
+
+  submitLockRef.current = true;
+  setLoading(true);
+  setMessage("");
+
+  const token = localStorage.getItem("token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  try {
+    // Si le groupe a déjà été créé lors d’une tentative précédente,
+    // on reprend uniquement l’ajout des membres.
+    if (!createdGroupIdRef.current) {
       const response = await fetch(`${API_URL}/api/groups`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers,
         body: JSON.stringify({
-          name: groupName,
-          description,
+          name: groupName.trim(),
+          description: description.trim(),
           created_by: user.id,
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json().catch(() => null);
 
-      if (!response.ok) {
-        throw new Error(data.error);
+      if (!response.ok || data?.id == null) {
+        throw new Error(
+          data?.error || "La création du groupe n’a pas été confirmée."
+        );
       }
 
-      // 🔥 AJOUT MEMBRES
-      for (let u of selectedUsers) {
-        await fetch(`${API_URL}/api/groups/${data.id}/add-member`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: u.id }),
-        });
-      }
-
-      // 🚀 REDIRECTION CHAT
-      navigate(`/chat/group/${data.id}`);
-
-    } catch (err) {
-      setMessage(err.message);
-    } finally {
-      setLoading(false);
+      createdGroupIdRef.current = data.id;
     }
-  };
+
+    const groupId = createdGroupIdRef.current;
+    const failedMembers = [];
+
+    for (const member of selectedUsers) {
+      const memberId = String(member.id);
+
+      if (
+        memberId === String(user.id) ||
+        addedMemberIdsRef.current.has(memberId)
+      ) {
+        continue;
+      }
+
+      try {
+        const response = await fetch(
+          `${API_URL}/api/groups/${groupId}/add-member`,
+          {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ user_id: member.id }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Ajout refusé.");
+        }
+
+        addedMemberIdsRef.current.add(memberId);
+      } catch {
+        failedMembers.push(member.username || "Un membre");
+      }
+    }
+
+    if (failedMembers.length > 0) {
+      setMessage(
+        `Le groupe est créé, mais ces membres n’ont pas pu être ajoutés : ${
+          failedMembers.join(", ")
+        }. Clique sur « Réessayer l’ajout des membres ».`
+      );
+      return;
+    }
+
+    navigate(`/chat/group/${groupId}`, { replace: true });
+  } catch (error) {
+    setMessage(error.message || "Une erreur est survenue.");
+  } finally {
+    submitLockRef.current = false;
+    setLoading(false);
+  }
+};
 
   return (
     <div className="create-group-page">
@@ -143,27 +249,30 @@ function CreateGroup() {
         </div>
 
         {/* NOM */}
-        <input
-          type="text"
-          placeholder="Nom du groupe"
-          value={groupName}
-          onChange={(e) => setGroupName(e.target.value)}
-        />
+      <input
+  type="text"
+  placeholder="Nom du groupe"
+  value={groupName}
+  onChange={(e) => setGroupName(e.target.value)}
+  disabled={loading || Boolean(createdGroupIdRef.current)}
+/>
 
         {/* DESCRIPTION */}
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        />
+       <textarea
+  placeholder="Description"
+  value={description}
+  onChange={(e) => setDescription(e.target.value)}
+  disabled={loading || Boolean(createdGroupIdRef.current)}
+/>
 
         {/* 🔍 RECHERCHE */}
-        <input
-          type="text"
-          placeholder="Rechercher des utilisateurs..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+       <input
+  type="text"
+  placeholder="Rechercher des utilisateurs..."
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  disabled={loading || Boolean(createdGroupIdRef.current)}
+/>
 
         {/* LISTE UTILISATEURS */}
         <div className="user-search-list">
@@ -180,16 +289,38 @@ function CreateGroup() {
           {selectedUsers.map(u => (
             <div key={u.id} className="selected-user">
               <span>{u.username}</span>
-              <button onClick={() => removeUser(u.id)}>❌</button>
+              <button
+  type="button"
+  disabled={loading || Boolean(createdGroupIdRef.current)}
+  onClick={() => removeUser(u.id)}
+  aria-label={`Retirer ${u.username} de la sélection`}
+>
+  ×
+</button>
             </div>
           ))}
         </div>
 
         {message && <p className="form-message">{message}</p>}
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Création...' : 'Créer le groupe'}
-        </button>
+       <button type="submit" disabled={loading}>
+  {loading
+    ? "Enregistrement…"
+    : createdGroupIdRef.current
+      ? "Réessayer l’ajout des membres"
+      : "Créer le groupe"}
+</button>
+
+{createdGroupIdRef.current && !loading && (
+  <button
+    type="button"
+    onClick={() =>
+      navigate(`/chat/group/${createdGroupIdRef.current}`)
+    }
+  >
+    Ouvrir le groupe
+  </button>
+)}
 
       </form>
     </div>
