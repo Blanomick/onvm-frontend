@@ -1,0 +1,13 @@
+{
+  "appId": "app.onvm.mobile",
+  "appName": "ONVM",
+  "webDir": "build",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#FFFFFF"
+  }
+}

@@ -1,0 +1,401 @@
+name: Build ONVM Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_code:
+        description: "Code Android : augmenter à chaque publication"
+        required: true
+        default: "1"
+        type: string
+
+      version_name:
+        description: "Version affichée"
+        required: true
+        default: "1.0.0"
+        type: string
+
+      signed_release:
+        description: "Produire aussi un AAB signé pour Google Play"
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: onvm-android
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    env:
+      CI: "true"
+      GENERATE_SOURCEMAP: "false"
+
+      REACT_APP_API_URL: "https://onvm-z085.onrender.com"
+      REACT_APP_WEBSOCKET_URL: "https://onvm-z085.onrender.com"
+
+      ANDROID_VERSION_CODE: ${{ inputs.version_code }}
+      ANDROID_VERSION_NAME: ${{ inputs.version_name }}
+
+    steps:
+      - name: Télécharger le projet
+        uses: actions/checkout@v4
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Installer Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Préparer Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Préparer Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Vérifier la configuration
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s capacitor.config.json
+          test -s public/onvm-logo.png
+
+          node <<'NODE'
+          const fs = require("fs");
+
+          const code = process.env.ANDROID_VERSION_CODE;
+          const name = process.env.ANDROID_VERSION_NAME;
+
+          if (
+            !/^[1-9][0-9]*$/.test(code || "") ||
+            Number(code) > 2100000000
+          ) {
+            throw new Error("Code de version Android invalide.");
+          }
+
+          if (!/^[0-9]+(\.[0-9]+){1,2}$/.test(name || "")) {
+            throw new Error("Utilise une version comme 1.0.0.");
+          }
+
+          const config = JSON.parse(
+            fs.readFileSync("capacitor.config.json", "utf8")
+          );
+
+          if (
+            config.appId !== "app.onvm.mobile" ||
+            config.webDir !== "build"
+          ) {
+            throw new Error("Configuration Capacitor ONVM invalide.");
+          }
+
+          if (config.server?.url) {
+            throw new Error("Ne pas utiliser server.url pour cette application.");
+          }
+          NODE
+
+      - name: Installer les dépendances React
+        run: npm ci
+
+      - name: Installer Capacitor sur le serveur GitHub
+        run: >
+          npm install --save-exact
+          @capacitor/core@8
+          @capacitor/android@8
+          @capacitor/cli@8
+
+      - name: Compiler React sur GitHub
+        run: npm run build
+
+      - name: Créer le projet Android ONVM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -s build/index.html
+
+          if [[ ! -d android ]]; then
+            npx cap add android
+          fi
+
+          npx cap sync android
+
+      - name: Configurer version et autorisations Android
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          import os
+          import re
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+
+          gradle = Path("android/app/build.gradle")
+          source = gradle.read_text()
+
+          if 'app.onvm.mobile' not in source:
+              raise RuntimeError("Le projet Android ne correspond pas à ONVM.")
+
+          source, count_code = re.subn(
+              r"\bversionCode\s+\d+",
+              "versionCode " + os.environ["ANDROID_VERSION_CODE"],
+              source,
+              count=1,
+          )
+
+          source, count_name = re.subn(
+              r'\bversionName\s+"[^"]*"',
+              'versionName "' + os.environ["ANDROID_VERSION_NAME"] + '"',
+              source,
+              count=1,
+          )
+
+          if count_code != 1 or count_name != 1:
+              raise RuntimeError("Impossible de modifier la version Android.")
+
+          gradle.write_text(source)
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          android = "http://schemas.android.com/apk/res/android"
+          ET.register_namespace("android", android)
+
+          tree = ET.parse(manifest)
+          root = tree.getroot()
+
+          existing_permissions = {
+              item.get("{" + android + "}name")
+              for item in root.findall("uses-permission")
+          }
+
+          permissions = [
+              "android.permission.INTERNET",
+              "android.permission.CAMERA",
+              "android.permission.RECORD_AUDIO",
+              "android.permission.MODIFY_AUDIO_SETTINGS",
+          ]
+
+          for permission in permissions:
+              if permission not in existing_permissions:
+                  ET.SubElement(
+                      root,
+                      "uses-permission",
+                      {"{" + android + "}name": permission},
+                  )
+
+          for feature in [
+              "android.hardware.camera",
+              "android.hardware.camera.autofocus",
+              "android.hardware.microphone",
+          ]:
+              found = next(
+                  (
+                      item
+                      for item in root.findall("uses-feature")
+                      if item.get("{" + android + "}name") == feature
+                  ),
+                  None,
+              )
+
+              if found is None:
+                  found = ET.SubElement(
+                      root,
+                      "uses-feature",
+                      {"{" + android + "}name": feature},
+                  )
+
+              found.set("{" + android + "}required", "false")
+
+          tree.write(manifest, encoding="utf-8", xml_declaration=True)
+          PY
+
+      - name: Générer les icônes ONVM
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require("fs");
+          const path = require("path");
+          const sharp = require("sharp");
+
+          async function main() {
+            const source = "public/onvm-logo.png";
+            const root = "android/app/src/main/res";
+
+            const densities = [
+              ["mdpi", 48, 108],
+              ["hdpi", 72, 162],
+              ["xhdpi", 96, 216],
+              ["xxhdpi", 144, 324],
+              ["xxxhdpi", 192, 432],
+            ];
+
+            for (const [density, size, foregroundSize] of densities) {
+              const folder = path.join(root, `mipmap-${density}`);
+              fs.mkdirSync(folder, { recursive: true });
+
+              for (const name of ["ic_launcher", "ic_launcher_round"]) {
+                await sharp(source)
+                  .resize(size, size, {
+                    fit: "contain",
+                    background: "#ffffff",
+                  })
+                  .flatten({ background: "#ffffff" })
+                  .png()
+                  .toFile(path.join(folder, `${name}.png`));
+              }
+
+              const innerSize = Math.round(foregroundSize * 0.58);
+              const padding = Math.floor((foregroundSize - innerSize) / 2);
+
+              await sharp(source)
+                .resize(innerSize, innerSize, {
+                  fit: "contain",
+                  background: "#ffffff",
+                })
+                .flatten({ background: "#ffffff" })
+                .extend({
+                  top: padding,
+                  left: padding,
+                  bottom: foregroundSize - innerSize - padding,
+                  right: foregroundSize - innerSize - padding,
+                  background: "#ffffff",
+                })
+                .png()
+                .toFile(path.join(folder, "ic_launcher_foreground.png"));
+            }
+
+            const adaptive = path.join(root, "mipmap-anydpi-v26");
+            fs.mkdirSync(adaptive, { recursive: true });
+
+            const xml = `<?xml version="1.0" encoding="utf-8"?>
+            <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+              <background android:drawable="@android:color/white" />
+              <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+            </adaptive-icon>`;
+
+            fs.writeFileSync(path.join(adaptive, "ic_launcher.xml"), xml);
+            fs.writeFileSync(path.join(adaptive, "ic_launcher_round.xml"), xml);
+          }
+
+          main().catch((error) => {
+            console.error(error.message);
+            process.exit(1);
+          });
+          NODE
+
+      - name: Compiler l’APK de test
+        working-directory: android
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug --no-daemon --stacktrace
+
+      - name: Conserver l’APK de test
+        uses: actions/upload-artifact@v4
+        with:
+          name: onvm-debug-apk-${{ inputs.version_code }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Préparer la clé de signature
+        if: ${{ inputs.signed_release }}
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test -n "$KEYSTORE_BASE64"
+          test -n "$ANDROID_KEYSTORE_PASSWORD"
+          test -n "$ANDROID_KEY_ALIAS"
+          test -n "$ANDROID_KEY_PASSWORD"
+
+          KEYSTORE_PATH="$RUNNER_TEMP/onvm-upload-key.jks"
+
+          printf '%s' "$KEYSTORE_BASE64" |
+            base64 --decode > "$KEYSTORE_PATH"
+
+          chmod 600 "$KEYSTORE_PATH"
+
+          keytool -list \
+            -keystore "$KEYSTORE_PATH" \
+            -storepass:env ANDROID_KEYSTORE_PASSWORD \
+            -alias "$ANDROID_KEY_ALIAS" > /dev/null
+
+          echo "ANDROID_KEYSTORE_PATH=$KEYSTORE_PATH" >> "$GITHUB_ENV"
+
+      - name: Compiler l’AAB
+        if: ${{ inputs.signed_release }}
+        working-directory: android
+        run: ./gradlew :app:bundleRelease --no-daemon --stacktrace
+
+      - name: Signer l’AAB
+        if: ${{ inputs.signed_release }}
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          AAB_PATH="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$AAB_PATH"
+
+          jarsigner \
+            -keystore "$ANDROID_KEYSTORE_PATH" \
+            -storepass:env ANDROID_KEYSTORE_PASSWORD \
+            -keypass:env ANDROID_KEY_PASSWORD \
+            -digestalg SHA-256 \
+            "$AAB_PATH" \
+            "$ANDROID_KEY_ALIAS"
+
+          jarsigner -verify "$AAB_PATH"
+
+      - name: Conserver l’AAB signé
+        if: ${{ inputs.signed_release }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: onvm-release-aab-${{ inputs.version_code }}-signed
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Conserver la configuration Android générée
+        uses: actions/upload-artifact@v4
+        with:
+          name: onvm-android-project-${{ inputs.version_code }}
+          path: |
+            android/
+            package.json
+            package-lock.json
+            capacitor.config.json
+            !android/.gradle/
+            !android/build/
+            !android/app/build/
+            !android/local.properties
+          retention-days: 14
+
+      - name: Supprimer la copie temporaire de la clé
+        if: ${{ always() }}
+        shell: bash
+        run: rm -f "$RUNNER_TEMP/onvm-upload-key.jks"
