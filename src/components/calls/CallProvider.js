@@ -7,7 +7,7 @@ import React, {
 } from "react";
 import { io } from "socket.io-client";
 import "./Calls.css";
-
+import CallScreen from "./CallScreen";
 const SERVER_URL = (
   process.env.REACT_APP_WEBSOCKET_URL ||
   process.env.REACT_APP_API_URL ||
@@ -63,14 +63,18 @@ function MediaView({ stream, muted = false, video = false, className = "" }) {
           className={className}
         />
       ) : (
-        <audio ref={ref} autoPlay />
+        <audio ref={ref} autoPlay muted={muted} />
       )}
 
       {blocked && (
-        <button type="button" onClick={play}>
-          Activer {video && muted ? "l’aperçu" : "le son"}
-        </button>
-      )}
+  <button
+    type="button"
+    className="oc-playback"
+    onClick={play}
+  >
+    Activer {video ? "la vidéo" : "le son"}
+  </button>
+)}
     </>
   );
 }
@@ -84,23 +88,85 @@ export function CallProvider({ currentUser, children }) {
   const [notice, setNotice] = useState("");
   const [call, setCall] = useState(null);
 
-  async function enableSound() {
+   async function enableSound() {
+  try {
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    if (
+      !audioContextRef.current ||
+      audioContextRef.current.state === "closed"
+    ) {
+      audioContextRef.current = new AudioContextClass();
+    }
+
+    await audioContextRef.current.resume();
+
+    setSoundEnabled(
+      audioContextRef.current.state === "running"
+    );
+  } catch {
+    setNotice(
+      "Le son n’a pas pu être activé. Réessaie depuis l’écran d’appel."
+    );
+  }
+}
+
+// Active le contexte audio lors d’une interaction avec l’application.
+// Aucun bouton permanent n’est affiché sur le fil de publications.
+useEffect(() => {
+  if (!currentUser?.id) return;
+
+  let disposed = false;
+  let unlocking = false;
+
+  function removeListeners() {
+    document.removeEventListener("click", unlock, true);
+    document.removeEventListener("keydown", unlock, true);
+  }
+
+  async function unlock() {
+    if (disposed || unlocking) return;
+
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    unlocking = true;
+
     try {
-      const AudioContextClass =
-        window.AudioContext || window.webkitAudioContext;
-
-      if (!AudioContextClass) return;
-
-      if (!audioContextRef.current) {
+      if (
+        !audioContextRef.current ||
+        audioContextRef.current.state === "closed"
+      ) {
         audioContextRef.current = new AudioContextClass();
       }
 
-      await audioContextRef.current.resume();
-      setSoundEnabled(audioContextRef.current.state === "running");
+      const context = audioContextRef.current;
+      await context.resume();
+
+      if (!disposed && context.state === "running") {
+        setSoundEnabled(true);
+        removeListeners();
+      }
     } catch {
-      setNotice("Le navigateur bloque la sonnerie. Vérifie ses autorisations.");
+      // L’écran d’appel conserve une activation manuelle si nécessaire.
+    } finally {
+      unlocking = false;
     }
   }
+
+  document.addEventListener("click", unlock, true);
+  document.addEventListener("keydown", unlock, true);
+
+  return () => {
+    disposed = true;
+    removeListeners();
+  };
+}, [currentUser?.id]);
 
   // Sonnerie synthétique, arrêtée dès que l’appel change d’état.
   useEffect(() => {
@@ -309,7 +375,10 @@ export function CallProvider({ currentUser, children }) {
 
         if (pc.connectionState === "connected") {
           clearTimeout(item.disconnectTimer);
-          update(item, { phase: "connected" });
+          update(item, {
+  phase: "connected",
+  connectedAt: item.connectedAt || Date.now(),
+});
           socket.emit("call:connected", { callId: item.id });
         } else if (pc.connectionState === "failed") {
           cleanup("Connexion impossible. Vérifie le réseau et le serveur TURN.", true);
@@ -366,7 +435,7 @@ export function CallProvider({ currentUser, children }) {
       try {
         if (!(await prepare(item))) return;
 
-        update(item, { phase: "ringing" });
+        update(item, { phase: "dialing" });
 
         const result = await request("call:start", {
           callId: item.id,
@@ -379,7 +448,10 @@ export function CallProvider({ currentUser, children }) {
           return;
         }
 
-        update(item, { peer: result.peer });
+       update(item, {
+  peer: result.peer,
+  phase: item.phase === "dialing" ? "ringing" : item.phase,
+});
       } catch (error) {
         fail(item, error);
       }
@@ -591,25 +663,26 @@ export function CallProvider({ currentUser, children }) {
       socket.disconnect();
     };
   }, [currentUser?.id]);
-
-  const labels = {
-    incoming: "Appel entrant",
-    preparing: "Préparation du micro et de la caméra…",
-    ringing: "Ça sonne…",
-    connecting: "Connexion…",
-    connected: "En communication",
-    reconnecting: "Connexion interrompue…",
-  };
-
   const peerPhoto = call?.peer?.profilePicture;
-  const photoUrl = peerPhoto
-    ? new URL(peerPhoto, `${SERVER_URL}/`).href
-    : null;
+
+  let photoUrl = null;
+
+  if (peerPhoto) {
+    try {
+      const mediaBase =
+        process.env.REACT_APP_API_URL || SERVER_URL;
+
+      photoUrl = new URL(peerPhoto, `${mediaBase}/`).href;
+    } catch {
+      photoUrl = null;
+    }
+  }
 
   return (
     <CallsContext.Provider
       value={{
         ready,
+        inCall: Boolean(call),
         startCall: (chatId, type) => {
           enableSound();
           actions.current.start?.(chatId, type);
@@ -618,146 +691,29 @@ export function CallProvider({ currentUser, children }) {
     >
       {children}
 
-      {currentUser && !soundEnabled && (
-        <button
-          type="button"
-          className="onvm-call-enable"
-          onClick={enableSound}
-        >
-          Activer la sonnerie des appels
-        </button>
-      )}
-
       {notice && (
         <div className="onvm-call-notice" role="status">
           <span>{notice}</span>
-          <button type="button" onClick={() => setNotice("")}>
+
+          <button
+            type="button"
+            onClick={() => setNotice("")}
+          >
             Fermer
           </button>
         </div>
       )}
 
       {call && (
-        <div className="onvm-call-overlay">
-          <section
-            className="onvm-call-card"
-            role="dialog"
-            aria-modal="true"
-            aria-label={call.type === "video" ? "Appel vidéo" : "Appel vocal"}
-          >
-            <p className="onvm-call-label">
-              ONVM · {call.type === "video" ? "Vidéo" : "Vocal"}
-            </p>
-
-            {photoUrl && (
-              <img
-                className="onvm-call-avatar"
-                src={photoUrl}
-                alt=""
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
-              />
-            )}
-
-            <h2>{call.peer?.username || "Votre contact"}</h2>
-            <p role="status">{labels[call.phase]}</p>
-
-            {call.type === "video" && call.local && (
-              <div className="onvm-call-videos">
-                <MediaView
-                  stream={call.remote}
-                  video
-                  muted
-                  className="onvm-call-remote"
-                />
-                <MediaView
-                  stream={call.local}
-                  video
-                  muted
-                  className="onvm-call-local"
-                />
-              </div>
-            )}
-
-            {/* Le son distant est diffusé une seule fois, ici. */}
-            {call.remote && <MediaView stream={call.remote} />}
-
-            {call.type === "video" && call.local && (
-              <label className="onvm-call-quality">
-                Qualité souhaitée
-                <select
-                  value={call.requestedQuality || "1080"}
-                  disabled={call.changingQuality}
-                  onChange={(event) =>
-                    actions.current.quality?.(event.target.value)
-                  }
-                >
-                  <option value="720">HD · 720p</option>
-                  <option value="1080">Full HD · 1080p</option>
-                  <option value="2160">4K · si disponible</option>
-                </select>
-                {call.captureSize && (
-                  <small>Capture locale : {call.captureSize}</small>
-                )}
-              </label>
-            )}
-
-            <div className="onvm-call-controls">
-              {call.phase === "incoming" ? (
-                <>
-                  <button
-                    type="button"
-                    className="onvm-call-answer"
-                    onClick={() => {
-                      enableSound();
-                      actions.current.accept?.();
-                    }}
-                  >
-                    Décrocher
-                  </button>
-                  <button
-                    type="button"
-                    className="onvm-call-end"
-                    onClick={() => actions.current.decline?.()}
-                  >
-                    Refuser
-                  </button>
-                </>
-              ) : (
-                <>
-                  {call.local && (
-                    <button
-                      type="button"
-                      onClick={() => actions.current.microphone?.()}
-                      aria-pressed={!call.microphone}
-                    >
-                      {call.microphone ? "Couper le micro" : "Activer le micro"}
-                    </button>
-                  )}
-
-                  {call.type === "video" && call.local && (
-                    <button
-                      type="button"
-                      onClick={() => actions.current.camera?.()}
-                      aria-pressed={!call.camera}
-                    >
-                      {call.camera ? "Couper la caméra" : "Activer la caméra"}
-                    </button>
-                  )}
-
-                  <button
-                    type="button"
-                    className="onvm-call-end"
-                    onClick={() => actions.current.end?.()}
-                  >
-                    Raccrocher
-                  </button>
-                </>
-              )}
-            </div>
-          </section>
-        </div>
+        <CallScreen
+          key={call.id}
+          call={call}
+          photoUrl={photoUrl}
+          soundEnabled={soundEnabled}
+          enableSound={enableSound}
+          actions={actions}
+          MediaView={MediaView}
+        />
       )}
     </CallsContext.Provider>
   );
