@@ -1,0 +1,345 @@
+.onvm-comments {
+  margin-top: 20px;
+  padding: 18px 0 4px;
+  background: #fff;
+  color: #222228;
+}
+
+.onvm-comments * {
+  box-sizing: border-box;
+}
+
+.onvm-comments button,
+.onvm-comments textarea,
+.onvm-comments input {
+  font: inherit;
+}
+
+.onvm-comments button {
+  cursor: pointer;
+}
+
+.onvm-comments button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.onvm-comments :focus-visible {
+  outline: 2px solid #585862;
+  outline-offset: 3px;
+}
+
+.onvm-comments__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 22px;
+}
+
+.onvm-comments__header h3 {
+  margin: 0 0 3px;
+  font-size: 17px;
+  letter-spacing: -0.4px;
+}
+
+.onvm-comments__header span {
+  font-size: 12px;
+  color: #8b8b95;
+}
+
+.onvm-comments__header > button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #f3f3f6;
+  color: #65656e;
+}
+
+.onvm-comments__list {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-height: 460px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 2px 4px 14px 0;
+}
+
+.onvm-comments__empty {
+  margin: 12px 0 26px;
+  color: #90909a;
+  font-size: 13px;
+  text-align: center;
+}
+
+.onvm-comments__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.onvm-comments .onvm-comments__avatar {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  background: linear-gradient(145deg, #eeeef3, #d4d4de);
+  color: #656570;
+  font-weight: 700;
+}
+
+.onvm-comments__avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.onvm-comments__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.onvm-comments__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.onvm-comments__meta strong {
+  font-size: 13px;
+  color: #25252c;
+  overflow-wrap: anywhere;
+}
+
+.onvm-comments__meta time {
+  font-size: 11px;
+  color: #9696a0;
+}
+
+.onvm-comments__body > p {
+  margin: 5px 0 0;
+  font-size: 14px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.onvm-comments__body > img,
+.onvm-comments__body > video {
+  display: block;
+  max-width: 100%;
+  max-height: 250px;
+  object-fit: contain;
+  border-radius: 14px;
+  margin-top: 10px;
+}
+
+.onvm-comments__body > audio {
+  display: block;
+  width: 100%;
+  max-width: 300px;
+  height: 40px;
+  margin-top: 10px;
+}
+
+.onvm-comments__composer {
+  margin-top: 18px;
+  padding: 13px;
+  border-radius: 20px;
+  background: #f6f6f8;
+}
+
+.onvm-comments__composer textarea {
+  display: block;
+  width: 100%;
+  min-height: 55px;
+  max-height: 180px;
+  resize: vertical;
+  border: 0;
+  background: transparent;
+  padding: 2px;
+  color: #26262d;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.onvm-comments__composer textarea::placeholder {
+  color: #9999a2;
+}
+
+.onvm-comments__tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 10px;
+}
+
+.onvm-comments__tools > button,
+.onvm-comments__file > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #73737e;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.onvm-comments__file {
+  position: relative;
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.onvm-comments__file input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.onvm-comments__file:focus-within {
+  outline: 2px solid #585862;
+  border-radius: 12px;
+}
+
+.onvm-comments__file:has(input:disabled) {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.onvm-comments__tools svg {
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.onvm-comments__tools > .onvm-comments__send {
+  margin-left: auto;
+  background: #222228;
+  color: white;
+  padding: 8px 12px;
+}
+
+.onvm-comments__preview {
+  position: relative;
+  max-width: 280px;
+  margin: 10px 0;
+}
+
+.onvm-comments__preview img,
+.onvm-comments__preview video {
+  display: block;
+  max-width: 100%;
+  max-height: 190px;
+  object-fit: contain;
+  border-radius: 12px;
+}
+
+.onvm-comments__preview audio {
+  display: block;
+  width: 100%;
+  height: 40px;
+}
+
+.onvm-comments__preview > button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #222228;
+  color: #fff;
+}
+
+.onvm-comments__recording {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  font-size: 12px;
+  color: #b02c4e;
+}
+
+.onvm-comments__record-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d83057;
+  animation: onvm-comment-pulse 1s ease-in-out infinite;
+}
+
+.onvm-comments__tools > button.is-recording {
+  color: #b02c4e;
+  background: #ffe8ee;
+}
+
+.onvm-comments__error {
+  margin: 10px 0;
+  color: #a92a44;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.onvm-comments__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+}
+
+@keyframes onvm-comment-pulse {
+  50% {
+    opacity: 0.3;
+    transform: scale(0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .onvm-comments__record-dot {
+    animation: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .onvm-comments__tools > button > span,
+  .onvm-comments__file > span {
+    font-size: 11px;
+  }
+
+  .onvm-comments__tools > button,
+  .onvm-comments__file > span {
+    padding: 7px;
+  }
+
+  .onvm-comments__tools {
+    gap: 3px;
+  }
+}
