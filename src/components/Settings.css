@@ -343,3 +343,74 @@
     transition: none;
   }
 }
+
+.onvm-settings .onvm-settings__link {
+  text-decoration: none;
+  color: inherit;
+  width: 100%;
+}
+
+.onvm-settings .onvm-settings__link:focus-visible {
+  outline: 3px solid #555;
+  outline-offset: 3px;
+}
+
+.onvm-settings .onvm-settings__deletion-link strong,
+.onvm-settings .onvm-settings__deletion-link .onvm-settings__icon {
+  color: #b42318;
+}
+
+.onvm-settings .onvm-settings__deletion-help {
+  margin: 12px 4px 0;
+  color: #666;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.onvm-safety__form {
+  display: grid;
+  gap: 12px;
+}
+
+.onvm-safety__form input,
+.onvm-safety__form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #bbb;
+  border-radius: 10px;
+  background: #fff;
+  color: #202024;
+  font: inherit;
+  font-size: 16px;
+}
+
+.onvm-safety__form textarea {
+  resize: vertical;
+}
+
+.onvm-safety__form button {
+  min-height: 44px;
+  padding: 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #202024;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.onvm-safety__form button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.onvm-safety p {
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.onvm-safety a {
+  text-decoration: underline;
+}

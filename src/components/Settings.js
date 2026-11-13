@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 import {
   FiArrowLeft,
   FiChevronRight,
@@ -9,10 +10,13 @@ import {
   FiCreditCard,
   FiLogOut,
   FiRefreshCw,
+  FiShield,
+  FiTrash2,
 } from "react-icons/fi";
 
 import ProfileAvatar from "./ProfileAvatar";
 import BottomNav from "./BottomNav";
+import SafetyReportForm from "./SafetyReportForm";
 import "./Settings.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
@@ -267,6 +271,78 @@ const Settings = ({ currentUser }) => {
           </div>
         </section>
 
+
+        <section
+          className="onvm-settings__section"
+          aria-labelledby="settings-privacy-title"
+        >
+          <h2 id="settings-privacy-title">
+            Confidentialité et données
+          </h2>
+
+          <div className="onvm-settings__options">
+            <a
+              className="onvm-settings__option onvm-settings__link"
+              href="https://onvme.netlify.app/privacy.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span className="onvm-settings__icon">
+                <FiShield aria-hidden="true" />
+              </span>
+
+              <span className="onvm-settings__option-text">
+                <strong>Politique de confidentialité</strong>
+                <span>
+                  Comprendre l’utilisation de tes données
+                </span>
+              </span>
+
+              <FiChevronRight
+                className="onvm-settings__chevron"
+                aria-hidden="true"
+              />
+            </a>
+
+            <a
+              className={
+                "onvm-settings__option " +
+                "onvm-settings__link " +
+                "onvm-settings__deletion-link"
+              }
+              href="https://onvme.netlify.app/privacy.html#suppression"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-describedby="settings-deletion-help"
+            >
+              <span className="onvm-settings__icon">
+                <FiTrash2 aria-hidden="true" />
+              </span>
+
+              <span className="onvm-settings__option-text">
+                <strong>Demander la suppression de mon compte</strong>
+                <span>
+                  Consulter la procédure et contacter ONVM
+                </span>
+              </span>
+
+              <FiChevronRight
+                className="onvm-settings__chevron"
+                aria-hidden="true"
+              />
+            </a>
+          </div>
+
+          <p
+            id="settings-deletion-help"
+            className="onvm-settings__deletion-help"
+          >
+            La demande s’effectue par e-mail depuis la page indiquée.
+            Ouvrir cette page ne supprime pas ton compte.
+            Se déconnecter ne supprime pas tes données.
+          </p>
+        </section>
+        <SafetyReportForm />
         <section className="onvm-settings__logout-section">
           <button
             type="button"
