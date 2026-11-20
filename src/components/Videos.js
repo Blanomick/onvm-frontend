@@ -15,6 +15,7 @@ import {
 import ProfileAvatar from "./ProfileAvatar";
 import CommentsSection from "./CommentsSection";
 import BottomNav from "./BottomNav";
+import SmartVideo from "./SmartVideo";
 import "./Videos.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
@@ -110,21 +111,26 @@ function VideoSlide({
         {failed ? (
           <div className="onvm-reel__failed">Cette vidéo ne peut pas être lue.</div>
         ) : (
-          <video
-            ref={videoRef}
-            className="onvm-reel__video"
-            src={near || active ? item.video.url : undefined}
-            poster={item.video.thumbnail || undefined}
-            loop
-            playsInline
-            muted={muted}
-            preload={active ? "auto" : "metadata"}
-            onTimeUpdate={(event) => {
-              const v = event.currentTarget;
-              if (v.duration) setProgress((v.currentTime / v.duration) * 100);
-            }}
-            onError={() => setFailed(true)}
-          />
+          near || active ? (
+            <SmartVideo
+              ref={videoRef}
+              className="onvm-reel__video"
+              media={item.video}
+              loop
+              muted={muted}
+              preload={active ? "auto" : "metadata"}
+              onTimeUpdate={(event) => {
+                const v = event.currentTarget;
+                if (v.duration) setProgress((v.currentTime / v.duration) * 100);
+              }}
+              onFail={() => setFailed(true)}
+            />
+          ) : (
+            <div
+              className="onvm-reel__video onvm-reel__poster"
+              style={item.video.thumbnail ? { backgroundImage: `url(${item.video.thumbnail})` } : undefined}
+            />
+          )
         )}
 
         {paused && !failed && (

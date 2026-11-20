@@ -110,3 +110,119 @@ self.addEventListener("fetch", (event) => {
     )
   );
 });
+
+/* ------------------------------------------------------------------ */
+/* Notifications push : appels, messages, activité                     */
+/* ------------------------------------------------------------------ */
+
+const API_URL = new URL(self.location.href).searchParams.get("api") || "";
+
+async function visibleClient() {
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  return windows.find((client) => client.visibilityState === "visible" && client.focused);
+}
+
+async function closeByTag(tag) {
+  if (!tag) return;
+  const list = await self.registration.getNotifications({ tag });
+  list.forEach((notification) => notification.close());
+}
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { title: "ONVM", body: event.data ? event.data.text() : "" };
+  }
+
+  event.waitUntil(
+    (async () => {
+      // Fin d'appel : on arrête la sonnerie, et on signale un appel manqué
+      if (data.type === "call-end") {
+        await closeByTag(data.tag);
+        if (data.reason === "no-answer" || data.reason === "disconnected") {
+          await self.registration.showNotification(data.title || "ONVM", {
+            body: data.body || "Appel manqué",
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-192.png",
+            tag: data.tag,
+            data: { url: data.url || "/conversations" },
+          });
+        }
+        return;
+      }
+
+      // Appli ouverte devant l'utilisateur : elle affiche déjà l'info
+      if (await visibleClient()) return;
+
+      const isCall = data.type === "call";
+      const options = {
+        body: data.body || "",
+        icon: data.icon || "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        tag: data.tag || undefined,
+        renotify: Boolean(data.tag),
+        timestamp: Date.now(),
+        data,
+        vibrate: isCall
+          ? [800, 400, 800, 400, 800, 400, 800, 400, 800, 400, 800]
+          : [200, 100, 200],
+        requireInteraction: isCall,
+        actions: isCall
+          ? [
+              { action: "answer", title: "Répondre" },
+              { action: "decline", title: "Refuser" },
+            ]
+          : [],
+      };
+
+      await self.registration.showNotification(data.title || "ONVM", options);
+    })()
+  );
+});
+
+async function openApp(path) {
+  const url = new URL(path || "/publication", self.location.origin).href;
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  const client = windows.find((item) => item.url.startsWith(self.location.origin));
+
+  if (client) {
+    await client.focus();
+    try {
+      await client.navigate(url);
+    } catch {
+      client.postMessage({ type: "onvm-open", url });
+    }
+    return;
+  }
+  await self.clients.openWindow(url);
+}
+
+self.addEventListener("notificationclick", (event) => {
+  const data = event.notification.data || {};
+  event.notification.close();
+
+  event.waitUntil(
+    (async () => {
+      if (data.type === "call" && event.action === "decline") {
+        if (API_URL) {
+          await fetch(`${API_URL}/api/push/call-decline`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ callId: data.callId, userId: data.userId, sig: data.sig }),
+          }).catch(() => undefined);
+        }
+        return;
+      }
+
+      if (data.type === "call") {
+        // « Répondre » décroche directement ; un appui simple ouvre l'appel
+        await openApp(event.action === "answer" ? data.answerUrl : data.url);
+        return;
+      }
+
+      await openApp(data.url);
+    })()
+  );
+});

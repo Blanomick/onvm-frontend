@@ -21,6 +21,7 @@ import Conversations from './components/Conversations';
 import CreateStory from './components/CreateStory';
 import CreatePublication from './components/CreatePublication';
 import Videos from './components/Videos';
+import { disablePush } from './utils/push';
 import StoryPage from './components/StoryPage';
 import Invitation from './components/Invitation'; // adapte le chemin si nécessaire
 import Logout from './components/Logout';
@@ -46,6 +47,7 @@ const currentUser = user;
 
 
  const handleLogout = () => {
+  disablePush();
   localStorage.removeItem("user");
   localStorage.removeItem("token");
 

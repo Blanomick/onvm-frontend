@@ -22,6 +22,8 @@ const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
 
 const MAX_COUNT = 5;
 const MAX_SIZE = 500 * 1024 * 1024;
+// Limite de Cloudinary (offre gratuite) pour une vidéo
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024;
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
@@ -209,6 +211,13 @@ export default function CreatePublication({ currentUser }) {
         continue;
       }
 
+      if (kindOf(file) === "video" && file.size > MAX_VIDEO_SIZE) {
+        errors.push(
+          `${file.name} : vidéo trop lourde (${Math.round(file.size / 1048576)} Mo). 100 Mo maximum — raccourcis-la ou baisse la qualité.`
+        );
+        continue;
+      }
+
       const signature = `${file.name}:${file.size}:${file.lastModified}`;
       if (signatures.has(signature)) continue;
 
@@ -289,12 +298,19 @@ export default function CreatePublication({ currentUser }) {
 
       if (attachments.length > 0) {
         let signature = null;
+        let videoSignature = null;
+        const hasVideo = attachments.some(({ kind }) => kind === "video");
 
         try {
           signature = await getUploadSignature(apiUrl, token);
+          if (hasVideo) {
+            videoSignature = await getUploadSignature(apiUrl, token, "video");
+          }
         } catch (signatureError) {
-          if (signatureError.status === 401) throw signatureError;
-          signature = null; // ancien mode ci-dessous
+          // Une vidéo ne doit jamais passer par l'ancien mode : trop lourd
+          // pour le serveur, c'était la cause des échecs.
+          if (signatureError.status === 401 || hasVideo) throw signatureError;
+          signature = null; // ancien mode ci-dessous (photos / audio)
         }
 
         if (signature) {
@@ -309,7 +325,7 @@ export default function CreatePublication({ currentUser }) {
             const offset = doneBytes;
             const uploaded = await uploadToCloudinary(
               file,
-              signature,
+              kind === "video" && videoSignature ? videoSignature : signature,
               kind,
               (loaded) => {
                 if (!mountedRef.current) return;
@@ -514,7 +530,7 @@ export default function CreatePublication({ currentUser }) {
             </div>
 
             <p className="onvm-compose__hint">
-              Photos, vidéos ou audio · 500 Mo maximum par fichier
+              Photos, vidéos (100 Mo max) ou audio
             </p>
 
             {fileError && (

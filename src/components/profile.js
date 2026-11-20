@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import './Profile.css';
 import { FaVideo  , FaComment, FaShare, FaRetweet, FaWallet, FaLock } from 'react-icons/fa'; // Ajout de l'icône de portefeuille
 import Cropper from 'react-cropper';
+import SmartVideo from './SmartVideo';
 import 'cropperjs/dist/cropper.css';
 import BottomNav from './BottomNav';
 import { FaHome, FaSearch, FaPlus, FaBell, FaUser  , FaUsers} from 'react-icons/fa';
@@ -26,9 +27,11 @@ const normalizeMedia = (media, kind = 'image') => {
         url: item.url || item,
         kind: item.kind || kind,
         type: kind,
+        mp4Url: item.mp4Url || null,
+        thumbnail: item.thumbnail || null,
       }));
     }
-    return [{ url: parsed.url || parsed, kind: parsed.kind || kind, type: kind }];
+    return [{ url: parsed.url || parsed, kind: parsed.kind || kind, type: kind, mp4Url: parsed.mp4Url || null, thumbnail: parsed.thumbnail || null }];
   } catch (e) {
     return [];
   }
@@ -206,42 +209,99 @@ setLikes(likesMap);
 
 
 
-  // Handle file change for profile picture
+  // Choix d'une nouvelle photo de profil
+  const [photoSaving, setPhotoSaving] = useState(false);
+
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => setNewProfileImage(reader.result);
-      reader.readAsDataURL(file);
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    if (file.type && !file.type.startsWith('image/')) {
+      alert('Choisis une image (JPG, PNG, WEBP…).');
+      return;
     }
+
+    // Les photos HEIC d'iPhone ne s'affichent pas dans tous les navigateurs
+    const reader = new FileReader();
+    reader.onload = () => {
+      const probe = new Image();
+      probe.onload = () => setNewProfileImage(reader.result);
+      probe.onerror = () =>
+        alert("Ce format d'image n'est pas lisible ici. Choisis une photo JPG ou PNG.");
+      probe.src = reader.result;
+    };
+    reader.onerror = () => alert('Impossible de lire cette image.');
+    reader.readAsDataURL(file);
   };
 
-  // Save the cropped profile image
+  // Enregistre la photo recadrée (640 × 640, JPG léger)
   const handleProfileImageSave = async () => {
-    if (!newProfileImage || !cropper) return;
+    if (!newProfileImage || !cropper || photoSaving) return;
 
-    cropper.getCroppedCanvas().toBlob(async (blob) => {
-      const formData = new FormData();
-      formData.append('profilePicture', blob, 'profile-picture.png');
-
-      try {
-        const response = await fetch(`${apiUrl}/api/users/${id}/profile-picture`, {
-          method: 'PUT',
-          body: formData,
-        });
-
-        if (response.ok) {
-          alert('Photo de profil mise à jour avec succès!');
-          setNewProfileImage(null); // Reset the profile image after saving
-          setCropper(null); // Reset the cropper instance
-          fetchProfileData(); // Refresh profile data
-        } else {
-          alert('Erreur lors de la mise à jour de la photo de profil.');
-        }
-      } catch (error) {
-        console.error('[ERREUR] Erreur lors de la mise à jour de la photo de profil:', error);
-      }
+    const canvas = cropper.getCroppedCanvas({
+      width: 640,
+      height: 640,
+      fillColor: '#fff',
+      imageSmoothingEnabled: true,
+      imageSmoothingQuality: 'high',
     });
+
+    if (!canvas) {
+      alert("Impossible de préparer l'image. Réessaie avec une autre photo.");
+      return;
+    }
+
+    setPhotoSaving(true);
+
+    canvas.toBlob(
+      async (blob) => {
+        try {
+          if (!blob) throw new Error("Impossible de préparer l'image.");
+
+          const formData = new FormData();
+          formData.append('profilePicture', blob, 'profile-picture.jpg');
+
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${apiUrl}/api/users/${id}/profile-picture`, {
+            method: 'PUT',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+            body: formData,
+          });
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            throw new Error(data.message || `Erreur ${response.status}`);
+          }
+
+          // Met à jour l'avatar partout dans l'appli
+          try {
+            const saved = JSON.parse(localStorage.getItem('user') || 'null');
+            if (saved && String(saved.id) === String(id)) {
+              localStorage.setItem(
+                'user',
+                JSON.stringify({ ...saved, profilePicture: data.profilePicture })
+              );
+            }
+          } catch {
+            // ignore
+          }
+
+          setProfileUser((previous) =>
+            previous ? { ...previous, profilePicture: data.profilePicture } : previous
+          );
+          setNewProfileImage(null);
+          setCropper(null);
+          fetchProfileData();
+        } catch (error) {
+          console.error('[ERREUR] Photo de profil :', error);
+          alert(`La photo n'a pas pu être enregistrée : ${error.message}`);
+        } finally {
+          setPhotoSaving(false);
+        }
+      },
+      'image/jpeg',
+      0.9
+    );
   };
 
   
@@ -588,7 +648,7 @@ console.log("🧪 Retweets :", retweets);
           type="file"
           ref={fileInputRef}
           hidden
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/*"
           onChange={(event) => {
             handleFileChange(event);
             setShowProfileMenu(false);
@@ -735,8 +795,9 @@ console.log("🧪 Retweets :", retweets);
       type="button"
       className="onvm-profile-save-photo"
       onClick={handleProfileImageSave}
+      disabled={photoSaving}
     >
-      Enregistrer la photo
+      {photoSaving ? 'Enregistrement…' : 'Enregistrer la photo'}
     </button>
   </section>
 )}
@@ -810,10 +871,11 @@ console.log("🧪 Retweets :", retweets);
   }
   if (mediaItem.kind === 'video') {
     return (
-      <video
+      <SmartVideo
         key={index}
-        src={resolveMediaUrl(mediaItem.url)}
+        media={{ ...mediaItem, url: resolveMediaUrl(mediaItem.url) }}
         controls
+        preload="metadata"
         className="post-media"
       />
     );
@@ -927,10 +989,11 @@ console.log("🧪 Retweets :", retweets);
   }
   if (mediaItem.kind === 'video') {
     return (
-      <video
+      <SmartVideo
         key={index}
-        src={resolveMediaUrl(mediaItem.url)}
+        media={{ ...mediaItem, url: resolveMediaUrl(mediaItem.url) }}
         controls
+        preload="metadata"
         className="post-media"
       />
     );

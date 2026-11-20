@@ -353,3 +353,7 @@
 .onvm-videos .onvm-bottom-nav .onvm-nav-button.is-active {
   color: #fff;
 }
+
+.onvm-reel__poster {
+  background: #000 center / cover no-repeat;
+}

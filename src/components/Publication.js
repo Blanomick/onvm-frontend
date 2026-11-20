@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import BottomNav from './BottomNav';
 import CommentsSection from './CommentsSection';
 import PostMediaCarousel from "./PostMediaCarousel";
+import SmartVideo from "./SmartVideo";
 import {
   FaRetweet,
   FaComment,
@@ -78,7 +79,7 @@ function useLightbox(){
       <div className="content" onClick={(e)=> e.stopPropagation()}>
         {items[index]?.type?.startsWith("image")
           ? <img src={items[index].url} alt="" />
-          : <video src={items[index].url} controls autoPlay playsInline />}
+          : <SmartVideo media={items[index]} controls autoPlay />}
       </div>
     </div>
   );
@@ -253,7 +254,12 @@ const normalizeMedia = (value) => {
         kind = 'audio';
       }
 
-      return { url, kind, type: kind };
+      const extra =
+        typeof entry === 'object' && entry
+          ? { mp4Url: entry.mp4Url || null, thumbnail: entry.thumbnail || null }
+          : {};
+
+      return { url, kind, type: kind, ...extra };
     })
     .filter(Boolean);
 };
@@ -589,6 +595,8 @@ const closeShareModal = () => {
     open(
       visualItems.map((item) => ({
         url: item.url,
+        mp4Url: item.mp4Url,
+        thumbnail: item.thumbnail,
         type: item.kind,
       })),
       visualIndex

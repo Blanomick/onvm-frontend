@@ -120,10 +120,27 @@ jobs:
           @capacitor/cli@8
           @capgo/capacitor-updater@8.54.2
 
+      # Notifications même appli fermée (appels, messages) : seulement si
+      # le fichier Firebase est fourni dans le secret GOOGLE_SERVICES_JSON.
+      - name: Activer les notifications Firebase
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${GOOGLE_SERVICES_JSON:-}" ]]; then
+            echo "Secret GOOGLE_SERVICES_JSON absent : appli construite sans notifications Android."
+            exit 0
+          fi
+          npm install --save-exact @capacitor/push-notifications@8
+          echo "ONVM_PUSH=1" >> "$GITHUB_ENV"
+
       - name: Compiler React sur GitHub
         run: npm run build
 
       - name: Créer le projet Android ONVM
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
         shell: bash
         run: |
           set -euo pipefail
@@ -135,6 +152,17 @@ jobs:
           fi
 
           npx cap sync android
+
+          if [[ "${ONVM_PUSH:-}" == "1" ]]; then
+            if [[ "$GOOGLE_SERVICES_JSON" == \{* ]]; then
+              printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            else
+              printf '%s' "$GOOGLE_SERVICES_JSON" | base64 --decode > android/app/google-services.json
+            fi
+            grep -q '"app.onvm.mobile"' android/app/google-services.json || {
+              echo "google-services.json ne contient pas app.onvm.mobile"; exit 1; }
+            echo "Notifications Firebase activées."
+          fi
 
       - name: Configurer version et autorisations Android
         shell: bash
@@ -189,6 +217,9 @@ jobs:
               "android.permission.CAMERA",
               "android.permission.RECORD_AUDIO",
               "android.permission.MODIFY_AUDIO_SETTINGS",
+              "android.permission.POST_NOTIFICATIONS",
+              "android.permission.VIBRATE",
+              "android.permission.WAKE_LOCK",
           ]
 
           for permission in permissions:

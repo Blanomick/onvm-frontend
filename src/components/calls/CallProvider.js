@@ -629,6 +629,23 @@ useEffect(() => {
 
       setNotice("");
       setCall({ ...active });
+
+      // Ouvert avec « Répondre » depuis la notification : on décroche
+      try {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("answer") === data.callId) {
+          params.delete("answer");
+          const query = params.toString();
+          window.history.replaceState(
+            null,
+            "",
+            `${window.location.pathname}${query ? `?${query}` : ""}`
+          );
+          accept();
+        }
+      } catch {
+        // l'appel reste affiché, l'utilisateur peut décrocher à la main
+      }
     });
 
     socket.on("call:accepted", accepted);

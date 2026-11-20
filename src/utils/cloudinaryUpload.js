@@ -4,8 +4,9 @@
 
 const CHUNK_SIZE = 20 * 1024 * 1024;
 
-export async function getUploadSignature(apiUrl, token) {
-  const response = await fetch(`${apiUrl}/api/publications/upload-signature`, {
+export async function getUploadSignature(apiUrl, token, kind) {
+  const query = kind === "video" ? "?kind=video" : "";
+  const response = await fetch(`${apiUrl}/api/publications/upload-signature${query}`, {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 
@@ -13,7 +14,9 @@ export async function getUploadSignature(apiUrl, token) {
     const error = new Error(
       response.status === 401
         ? "Ta session a expiré. Reconnecte-toi pour publier."
-        : "Envoi direct indisponible."
+        : response.status === 503
+          ? "Le stockage des médias n’est pas configuré sur le serveur."
+          : "Envoi direct indisponible."
     );
     error.status = response.status;
     throw error;
@@ -57,7 +60,7 @@ function sendChunk({ endpoint, form, headers, onProgress }) {
   });
 }
 
-// URL lisible partout (HEIC -> JPG, MOV/MKV -> MP4)
+// Photos HEIC (iPhone) -> JPG lisible partout
 function playableUrl(result) {
   const url = result.secure_url;
   const format = String(result.format || "").toLowerCase();
@@ -66,23 +69,18 @@ function playableUrl(result) {
     return url.replace(/\.[a-z0-9]+$/i, ".jpg");
   }
 
-  if (
-    result.resource_type === "video" &&
-    !["mp4", "webm", "mp3", "m4a", "ogg", "wav", "aac", "opus"].includes(format)
-  ) {
-    return url
-      .replace("/video/upload/", "/video/upload/q_auto,vc_auto/")
-      .replace(/\.[a-z0-9]+$/i, ".mp4");
-  }
-
   return url;
 }
 
-function videoThumbnail(url) {
-  return url
-    .replace("/video/upload/", "/video/upload/so_0/")
-    .replace(/\/q_auto,vc_auto\//, "/")
-    .replace(/\.[a-z0-9]+$/i, ".jpg");
+// Adresse d'une version préparée par Cloudinary (MP4 converti, aperçu)
+function derivedUrl(result, signature, index, extension) {
+  const fromResponse = result.eager?.[index]?.secure_url;
+  if (fromResponse) return fromResponse;
+
+  const transformation = String(signature.eager || "").split("|")[index];
+  if (!transformation) return null;
+  const [steps] = transformation.split("/");
+  return `https://res.cloudinary.com/${signature.cloudName}/video/upload/${steps}/v${result.version}/${result.public_id}.${extension}`;
 }
 
 export async function uploadToCloudinary(file, signature, kind, onProgress) {
@@ -100,6 +98,10 @@ export async function uploadToCloudinary(file, signature, kind, onProgress) {
     form.append("timestamp", String(signature.timestamp));
     form.append("signature", signature.signature);
     form.append("folder", signature.folder);
+    if (signature.eager) {
+      form.append("eager", signature.eager);
+      form.append("eager_async", String(signature.eager_async));
+    }
 
     const headers =
       total > CHUNK_SIZE
@@ -131,6 +133,7 @@ export async function uploadToCloudinary(file, signature, kind, onProgress) {
           : kind || "other";
 
   const url = playableUrl(result);
+  const video = resolvedKind === "video" && result.resource_type === "video";
 
   return {
     url,
@@ -138,6 +141,11 @@ export async function uploadToCloudinary(file, signature, kind, onProgress) {
     width: result.width || null,
     height: result.height || null,
     duration: result.duration || null,
-    ...(resolvedKind === "video" ? { thumbnail: videoThumbnail(url) } : {}),
+    ...(video
+      ? {
+          mp4Url: derivedUrl(result, signature, 0, "mp4"),
+          thumbnail: derivedUrl(result, signature, 1, "jpg"),
+        }
+      : {}),
   };
 }

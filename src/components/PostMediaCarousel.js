@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./PostMediaCarousel.css";
+import SmartVideo from "./SmartVideo";
 
 function MediaItem({ item, index, onOpen, autoPlay }) {
   const [failed, setFailed] = useState(false);
@@ -57,17 +58,16 @@ function MediaItem({ item, index, onOpen, autoPlay }) {
 
   if (item.kind === "video") {
     return (
-      <video
+      <SmartVideo
         key={`${item.url}-${attempt}`}
         ref={mediaRef}
-        src={item.url}
+        media={item}
         controls
-        playsInline
         preload="metadata"
         autoPlay={autoPlay}
         muted={autoPlay}
         loop={autoPlay}
-        onError={() => setFailed(true)}
+        onFail={() => setFailed(true)}
         aria-label={`Vidéo ${index + 1}`}
       />
     );

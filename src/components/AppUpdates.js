@@ -1,5 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import "./AppUpdates.css";
+import {
+  enableNativePush,
+  enableWebPush,
+  isNativeApp,
+  webPushPermission,
+} from "../utils/push";
 
 /* ONVM — installation et mises à jour
    1. Web : bouton « Installer ONVM » (Android/Chrome) ou mode d'emploi (iPhone).
@@ -136,6 +142,93 @@ function useWebUpdate() {
   return { available, apply };
 }
 
+/* ---------- 4. Notifications (appels, messages) ---------- */
+const PUSH_DISMISS_KEY = "onvm_push_dismissed_at";
+
+function loggedIn() {
+  try {
+    return Boolean(localStorage.getItem("token"));
+  } catch {
+    return false;
+  }
+}
+
+function usePush() {
+  const [ask, setAsk] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const doneFor = useRef(null);
+
+  useEffect(() => {
+    let stopped = false;
+
+    const refresh = async () => {
+      const currentToken = loggedIn() ? localStorage.getItem("token") : null;
+      if (!currentToken || stopped) {
+        setAsk(false);
+        return;
+      }
+      if (doneFor.current === currentToken) return;
+
+      try {
+        if (isNativeApp()) {
+          doneFor.current = currentToken;
+          await enableNativePush();
+          return;
+        }
+
+        const permission = webPushPermission();
+        if (permission === "granted") {
+          doneFor.current = currentToken;
+          await enableWebPush(false);
+        } else if (permission === "default") {
+          let dismissed = 0;
+          try {
+            dismissed = Number(localStorage.getItem(PUSH_DISMISS_KEY) || 0);
+          } catch {
+            dismissed = 0;
+          }
+          if (!dismissed || Date.now() - dismissed > 3 * 24 * 3600 * 1000) {
+            setAsk(true);
+          }
+        }
+      } catch (error) {
+        console.warn("Notifications :", error.message);
+      }
+    };
+
+    refresh();
+    const timer = window.setInterval(refresh, 4000);
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, []);
+
+  const enable = async () => {
+    setBusy(true);
+    try {
+      const result = await enableWebPush(true);
+      if (result === "granted") doneFor.current = localStorage.getItem("token");
+    } catch (error) {
+      console.warn("Notifications :", error.message);
+    } finally {
+      setBusy(false);
+      setAsk(false);
+    }
+  };
+
+  const later = () => {
+    try {
+      localStorage.setItem(PUSH_DISMISS_KEY, String(Date.now()));
+    } catch {
+      // ignore
+    }
+    setAsk(false);
+  };
+
+  return { ask, busy, enable, later };
+}
+
 /* ---------- 1. Installation ---------- */
 function useInstall() {
   const promptRef = useRef(null);
@@ -197,6 +290,7 @@ export default function AppUpdates() {
   useOtaReady();
   const update = useWebUpdate();
   const installer = useInstall();
+  const push = usePush();
 
   if (update.available) {
     return (
@@ -208,6 +302,34 @@ export default function AppUpdates() {
         </div>
         <button type="button" className="onvm-app-banner__main" onClick={update.apply}>
           Mettre à jour
+        </button>
+      </div>
+    );
+  }
+
+  if (push.ask) {
+    return (
+      <div className="onvm-app-banner" role="dialog" aria-label="Activer les notifications">
+        <img src="/icons/icon-192.png" alt="" width="36" height="36" />
+        <div className="onvm-app-banner__text">
+          <strong>Ne rate plus un appel</strong>
+          <span>Active les notifications pour être prévenu des appels et messages, même appli fermée.</span>
+        </div>
+        <button
+          type="button"
+          className="onvm-app-banner__main"
+          onClick={push.enable}
+          disabled={push.busy}
+        >
+          Activer
+        </button>
+        <button
+          type="button"
+          className="onvm-app-banner__close"
+          onClick={push.later}
+          aria-label="Plus tard"
+        >
+          ×
         </button>
       </div>
     );
@@ -272,9 +394,18 @@ export function registerServiceWorker() {
     return;
   }
 
+  // Ouverture demandée par une notification (si la navigation directe échoue)
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    const url = event.data?.type === "onvm-open" ? event.data.url : null;
+    if (url && url.startsWith(window.location.origin)) window.location.assign(url);
+  });
+
   window.addEventListener("load", () => {
+    const api = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
     navigator.serviceWorker
-      .register("/service-worker.js", { updateViaCache: "none" })
+      .register(`/service-worker.js?api=${encodeURIComponent(api)}`, {
+        updateViaCache: "none",
+      })
       .catch((error) => console.error("Service worker :", error));
   });
 }
