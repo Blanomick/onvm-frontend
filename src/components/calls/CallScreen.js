@@ -60,6 +60,7 @@ function Control({ icon: Icon, label, variant = "", ...props }) {
 
 export default function CallScreen({
   call,
+  qualityOptions = [],
   photoUrl,
   soundEnabled,
   enableSound,
@@ -256,18 +257,25 @@ export default function CallScreen({
 
           {videoLayout && (
             <label className="oc-quality">
-              <span>Qualité souhaitée</span>
+              <span>Qualité de l’appel</span>
               <select
                 value={call.requestedQuality || "1080"}
-                disabled={call.changingQuality}
+                disabled={call.changingQuality || !connected}
                 onChange={(event) =>
                   actions.current.quality?.(event.target.value)
                 }
               >
-                <option value="720">HD · 720p</option>
-                <option value="1080">Full HD · 1080p</option>
-                <option value="2160">4K si disponible</option>
+                {qualityOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
+              {connected && call.receiveInfo && (
+                <small className="oc-quality-info">
+                  Image reçue : {call.receiveInfo}
+                </small>
+              )}
             </label>
           )}
 

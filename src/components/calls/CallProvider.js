@@ -16,6 +16,20 @@ const SERVER_URL = (
 
 const CallsContext = createContext(null);
 
+// Qualité vidéo : taille de l'image + débit maximum envoyé.
+// Sans débit plus élevé, le navigateur garde une image floue même en 1080p.
+const QUALITIES = {
+  "360": { width: 640, height: 360, fps: 24, bitrate: 450000, label: "Économie · 360p" },
+  "720": { width: 1280, height: 720, fps: 30, bitrate: 2000000, label: "HD · 720p" },
+  "1080": { width: 1920, height: 1080, fps: 30, bitrate: 4500000, label: "Full HD · 1080p" },
+  "2160": { width: 3840, height: 2160, fps: 30, bitrate: 12000000, label: "4K si disponible" },
+};
+export const QUALITY_OPTIONS = Object.entries(QUALITIES).map(([value, q]) => ({
+  value,
+  label: q.label,
+}));
+const DEFAULT_QUALITY = "1080";
+
 export function useCalls() {
   return useContext(CallsContext);
 }
@@ -191,9 +205,11 @@ useEffect(() => {
         const oscillator = context.createOscillator();
         const gain = context.createGain();
 
-        oscillator.frequency.value = call.phase === "incoming" ? 660 : 440;
+        const incomingRing = call.phase === "incoming";
+        oscillator.type = incomingRing ? "triangle" : "sine";
+        oscillator.frequency.value = incomingRing ? (offset ? 784 : 660) : 440;
         gain.gain.setValueAtTime(0, start + offset);
-        gain.gain.linearRampToValueAtTime(0.08, start + offset + 0.03);
+        gain.gain.linearRampToValueAtTime(incomingRing ? 0.35 : 0.12, start + offset + 0.03);
         gain.gain.linearRampToValueAtTime(0, start + offset + 0.3);
 
         oscillator.connect(gain);
@@ -212,7 +228,7 @@ useEffect(() => {
     }
 
     ring();
-    const timer = setInterval(ring, 2200);
+    const timer = setInterval(ring, call.phase === "incoming" ? 1600 : 2200);
 
     return () => {
       clearInterval(timer);
@@ -225,6 +241,28 @@ useEffect(() => {
       });
     };
   }, [soundEnabled, call?.phase]);
+
+  // Vibration pendant un appel entrant (Android)
+  useEffect(() => {
+    if (call?.phase !== "incoming" || !navigator.vibrate) return;
+    const buzz = () => {
+      try {
+        navigator.vibrate([800, 400, 800]);
+      } catch {
+        // non pris en charge
+      }
+    };
+    buzz();
+    const timer = setInterval(buzz, 2400);
+    return () => {
+      clearInterval(timer);
+      try {
+        navigator.vibrate(0);
+      } catch {
+        // rien
+      }
+    };
+  }, [call?.phase]);
 
   useEffect(() => {
     return () => {
@@ -279,6 +317,7 @@ useEffect(() => {
         }
 
         clearTimeout(item.disconnectTimer);
+        clearInterval(item.statsTimer);
 
         if (item.pc) {
           item.pc.ontrack = null;
@@ -380,6 +419,12 @@ useEffect(() => {
   connectedAt: item.connectedAt || Date.now(),
 });
           socket.emit("call:connected", { callId: item.id });
+
+          if (item.type === "video" && !item.qualityApplied) {
+            item.qualityApplied = true;
+            applySendQuality(item, item.requestedQuality || DEFAULT_QUALITY);
+            watchStats(item);
+          }
         } else if (pc.connectionState === "failed") {
           cleanup("Connexion impossible. Vérifie le réseau et le serveur TURN.", true);
         } else if (pc.connectionState === "disconnected") {
@@ -535,40 +580,114 @@ useEffect(() => {
       }
     }
 
-    async function quality(value) {
-      const item = active;
+    // Règle ce que J'ENVOIE : taille de la caméra + débit + priorité à la netteté
+    async function applySendQuality(item, value) {
+      const preset = QUALITIES[value];
       const track = item?.local?.getVideoTracks()[0];
+      if (!preset || !track || active !== item) return;
 
-      if (!track || item.changingQuality) return;
-
-      const sizes = {
-        "720": [1280, 720],
-        "1080": [1920, 1080],
-        "2160": [3840, 2160],
-      };
-
-      const size = sizes[value];
-      if (!size) return;
-
-      update(item, { changingQuality: true });
+      try {
+        track.contentHint = Number(value) >= 1080 ? "detail" : "motion";
+      } catch {
+        // non pris en charge
+      }
 
       try {
         await track.applyConstraints({
-          width: { ideal: size[0] },
-          height: { ideal: size[1] },
-          frameRate: { ideal: 30, max: 30 },
-        });
-
-        const settings = track.getSettings();
-
-        update(item, {
-          requestedQuality: value,
-          captureSize: `${settings.width} × ${settings.height}`,
+          width: { ideal: preset.width },
+          height: { ideal: preset.height },
+          frameRate: { ideal: preset.fps, max: preset.fps },
         });
       } catch {
-        if (active === item) setNotice("Cette qualité n’est pas disponible.");
+        // la caméra garde sa taille actuelle ; le débit change quand même
+      }
+      if (active !== item) return;
+
+      const settings = track.getSettings();
+      const sender = item.pc
+        ?.getSenders()
+        .find((candidate) => candidate.track?.kind === "video");
+
+      if (sender?.getParameters && sender.setParameters) {
+        const params = sender.getParameters();
+        if (!params.encodings || !params.encodings.length) params.encodings = [{}];
+
+        // Si la caméra filme plus grand que demandé (ex. 1080p en mode 360p),
+        // on réduit l'image envoyée.
+        const scale =
+          settings.height && settings.height > preset.height
+            ? settings.height / preset.height
+            : 1;
+
+        params.encodings[0].maxBitrate = preset.bitrate;
+        params.encodings[0].maxFramerate = preset.fps;
+        params.encodings[0].scaleResolutionDownBy = scale;
+
+        try {
+          await sender.setParameters({
+            ...params,
+            degradationPreference: value === "360" ? "balanced" : "maintain-resolution",
+          });
+        } catch {
+          try {
+            await sender.setParameters(params);
+          } catch (error) {
+            console.warn("Qualité vidéo :", error.message);
+          }
+        }
+      }
+
+      update(item, {
+        captureSize:
+          settings.width && settings.height ? `${settings.width} × ${settings.height}` : "",
+      });
+    }
+
+    // Mesure l'image réellement reçue (taille, images/s) toutes les 2 s
+    function watchStats(item) {
+      clearInterval(item.statsTimer);
+      item.statsTimer = setInterval(async () => {
+        if (active !== item || !item.pc) {
+          clearInterval(item.statsTimer);
+          return;
+        }
+        try {
+          const stats = await item.pc.getStats();
+          let info = "";
+          stats.forEach((report) => {
+            if (report.type === "inbound-rtp" && report.kind === "video" && report.frameHeight) {
+              const fps = Math.round(report.framesPerSecond || 0);
+              info = `${report.frameWidth} × ${report.frameHeight}${fps ? ` · ${fps} i/s` : ""}`;
+            }
+          });
+          if (active === item && info !== item.receiveInfo) {
+            update(item, { receiveInfo: info });
+          }
+        } catch {
+          // statistiques indisponibles
+        }
+      }, 2000);
+    }
+
+    // Choix de l'utilisateur : vaut pour tout l'appel.
+    // L'autre personne adapte ce qu'elle envoie (c'est l'image que JE vois),
+    // et j'adapte ce que j'envoie.
+    async function quality(value) {
+      const item = active;
+      if (!item || !QUALITIES[value] || item.type !== "video") return;
+
+      update(item, { requestedQuality: value, changingQuality: true });
+      setNotice(`Qualité : ${QUALITIES[value].label}`);
+
+      socket.emit("call:quality", { callId: item.id, quality: value });
+
+      try {
+        await applySendQuality(item, value);
       } finally {
         update(item, { changingQuality: false });
+        setTimeout(() => setNotice((current) =>
+          current.startsWith("Qualité :") ? "" : current
+        ), 2500);
       }
     }
 
@@ -650,6 +769,13 @@ useEffect(() => {
 
     socket.on("call:accepted", accepted);
 
+    socket.on("call:quality", ({ callId, quality: value } = {}) => {
+      const item = active;
+      if (!item || item.id !== callId || !QUALITIES[value]) return;
+      update(item, { requestedQuality: value });
+      applySendQuality(item, value);
+    });
+
     socket.on("call:signal", (data) => {
       signalQueue = signalQueue.then(() => handleSignal(data));
     });
@@ -725,6 +851,7 @@ useEffect(() => {
         <CallScreen
           key={call.id}
           call={call}
+          qualityOptions={QUALITY_OPTIONS}
           photoUrl={photoUrl}
           soundEnabled={soundEnabled}
           enableSound={enableSound}

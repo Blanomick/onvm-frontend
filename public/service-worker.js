@@ -130,6 +130,9 @@ async function closeByTag(tag) {
   list.forEach((notification) => notification.close());
 }
 
+// Appels déjà terminés : une sonnerie en retard ne doit pas réapparaître
+const endedCalls = new Set();
+
 self.addEventListener("push", (event) => {
   let data = {};
   try {
@@ -142,8 +145,14 @@ self.addEventListener("push", (event) => {
     (async () => {
       // Fin d'appel : on arrête la sonnerie, et on signale un appel manqué
       if (data.type === "call-end") {
+        if (data.tag) endedCalls.add(data.tag);
         await closeByTag(data.tag);
-        if (data.reason === "no-answer" || data.reason === "disconnected") {
+        const missed =
+          data.missed === true ||
+          data.missed === "true" ||
+          data.reason === "no-answer" ||
+          data.reason === "disconnected";
+        if (missed) {
           await self.registration.showNotification(data.title || "ONVM", {
             body: data.body || "Appel manqué",
             icon: "/icons/icon-192.png",
@@ -159,12 +168,22 @@ self.addEventListener("push", (event) => {
       if (await visibleClient()) return;
 
       const isCall = data.type === "call";
+
+      // Sonnerie répétée : on ignore les rappels d'un appel fini ou expiré
+      if (isCall) {
+        if (data.tag && endedCalls.has(data.tag)) return;
+        const expiresAt = Number(data.expiresAt);
+        if (expiresAt && Date.now() > expiresAt) return;
+      }
+
       const options = {
         body: data.body || "",
         icon: data.icon || "/icons/icon-192.png",
         badge: "/icons/icon-192.png",
         tag: data.tag || undefined,
+        // même « tag » : remplace la notification ET refait sonner/vibrer
         renotify: Boolean(data.tag),
+        silent: false,
         timestamp: Date.now(),
         data,
         vibrate: isCall

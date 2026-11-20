@@ -152,6 +152,14 @@ export async function enableNativePush() {
       visibility: 1,
       vibration: true,
     });
+    await PushNotifications.createChannel({
+      id: "onvm_silent",
+      name: "Appels terminés",
+      description: "Arrête la sonnerie quand l'appel est décroché ou terminé",
+      importance: 2,
+      visibility: 1,
+      vibration: false,
+    });
   } catch {
     // Android < 8 : pas de canaux
   }

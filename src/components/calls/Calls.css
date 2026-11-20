@@ -459,6 +459,13 @@
   font-size: 12px;
 }
 
+.oc-quality-info {
+  flex-basis: 100%;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 11px;
+}
+
 .oc-audio {
   position: relative;
   z-index: 4;
