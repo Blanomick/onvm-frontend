@@ -1,13 +1,26 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
 
-const socket = io("http://localhost:5000"); // mettre ton API render en prod
+const SERVER_URL = (
+  process.env.REACT_APP_WEBSOCKET_URL ||
+  process.env.REACT_APP_API_URL ||
+  ""
+).replace(/\/+$/, "");
 
 function Live() {
   const [lives, setLives] = useState([]);
-  const [user] = useState(JSON.parse(localStorage.getItem("user")));
+  const [user] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const socketRef = useRef(null);
 
   const startLive = () => {
+    const socket = socketRef.current;
+    if (!socket || !user) return;
     const liveData = {
       userId: user.id,
       username: user.username,
@@ -18,6 +31,14 @@ function Live() {
   };
 
   useEffect(() => {
+    // Connexion seulement quand la page Live est ouverte
+    if (!SERVER_URL) return undefined;
+    const socket = io(SERVER_URL, {
+      transports: ["websocket", "polling"],
+      withCredentials: true,
+    });
+    socketRef.current = socket;
+
     socket.on("liveStarted", (data) => {
       setLives((prev) => [...prev, data]);
     });
@@ -29,6 +50,8 @@ function Live() {
     return () => {
       socket.off("liveStarted");
       socket.off("liveEnded");
+      socket.disconnect();
+      socketRef.current = null;
     };
   }, []);
 
