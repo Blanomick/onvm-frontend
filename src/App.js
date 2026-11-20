@@ -20,6 +20,7 @@ import Chat from './components/Chat';
 import Conversations from './components/Conversations';
 import CreateStory from './components/CreateStory';
 import CreatePublication from './components/CreatePublication';
+import Videos from './components/Videos';
 import StoryPage from './components/StoryPage';
 import Invitation from './components/Invitation'; // adapte le chemin si nécessaire
 import Logout from './components/Logout';
@@ -167,6 +168,12 @@ element={currentUser ? <Chat currentUser={currentUser} /> : <Navigate to="/auth"
     )
   }
 />
+
+          {/* Fil vidéo façon TikTok / Reels */}
+          <Route
+            path="/videos"
+            element={user ? <Videos user={user} /> : <Navigate to="/auth" />}
+          />
 
           {/* Page d'authentification pour les administrateurs */}
           <Route

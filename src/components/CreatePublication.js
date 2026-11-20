@@ -13,21 +13,30 @@ import {
 import ProfileAvatar from "./ProfileAvatar";
 import PostMediaCarousel from "./PostMediaCarousel";
 import "./CreatePublication.css";
+import {
+  getUploadSignature,
+  uploadToCloudinary,
+} from "../utils/cloudinaryUpload";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
 
 const MAX_COUNT = 5;
-const MAX_SIZE = 200 * 1024 * 1024;
+const MAX_SIZE = 500 * 1024 * 1024;
 
 const ACCEPTED_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
+  "image/heic",
+  "image/heif",
   "video/mp4",
   "video/webm",
   "video/ogg",
   "video/quicktime",
+  "video/3gpp",
+  "video/x-matroska",
+  "video/x-m4v",
   "audio/mpeg",
   "audio/mp3",
   "audio/wav",
@@ -38,8 +47,25 @@ const ACCEPTED_TYPES = [
   "audio/m4a",
 ];
 
+// Certains téléphones donnent un type vide : on devine par l’extension
+const EXTENSION_TYPES = {
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", webp: "image/webp",
+  gif: "image/gif", heic: "image/heic", heif: "image/heif",
+  mp4: "video/mp4", webm: "video/webm", mov: "video/quicktime",
+  m4v: "video/x-m4v", "3gp": "video/3gpp", mkv: "video/x-matroska",
+  ogv: "video/ogg", mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg",
+  opus: "audio/opus", aac: "audio/aac", m4a: "audio/x-m4a",
+};
+
+function typeOf(file) {
+  const type = (file.type || "").split(";")[0].trim().toLowerCase();
+  if (type) return type;
+  const extension = (file.name || "").split(".").pop().toLowerCase();
+  return EXTENSION_TYPES[extension] || "";
+}
+
 function kindOf(file) {
-  return file.type.split("/")[0];
+  return typeOf(file).split("/")[0];
 }
 
 export default function CreatePublication({ currentUser }) {
@@ -173,13 +199,13 @@ export default function CreatePublication({ currentUser }) {
     );
 
     for (const file of selected) {
-      if (!ACCEPTED_TYPES.includes(file.type)) {
+      if (!ACCEPTED_TYPES.includes(typeOf(file))) {
         errors.push(`${file.name} : format non pris en charge.`);
         continue;
       }
 
       if (!file.size || file.size > MAX_SIZE) {
-        errors.push(`${file.name} : fichier vide ou supérieur à 200 Mo.`);
+        errors.push(`${file.name} : fichier vide ou supérieur à 500 Mo.`);
         continue;
       }
 
@@ -254,27 +280,84 @@ export default function CreatePublication({ currentUser }) {
     setPublishError("");
     setProgress(null);
 
-    const formData = new FormData();
-    formData.append("userId", String(userId));
-    formData.append("content", publicationText);
-
-    attachments.forEach(({ file }) => {
-      formData.append("media", file);
-    });
+    const token = localStorage.getItem("token");
+    const authHeaders = token ? { Authorization: `Bearer ${token}` } : {};
 
     try {
-      const token = localStorage.getItem("token");
+      // 1) Envoi direct vers Cloudinary (rapide, sans passer par le serveur)
+      let remoteMedia = null;
 
-      await axios.post(`${apiUrl}/api/publications`, formData, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        onUploadProgress: (event) => {
-          if (!mountedRef.current || !event.total) return;
+      if (attachments.length > 0) {
+        let signature = null;
 
-          setProgress(
-            Math.min(100, Math.round((event.loaded / event.total) * 100))
+        try {
+          signature = await getUploadSignature(apiUrl, token);
+        } catch (signatureError) {
+          if (signatureError.status === 401) throw signatureError;
+          signature = null; // ancien mode ci-dessous
+        }
+
+        if (signature) {
+          const totalBytes = attachments.reduce(
+            (sum, { file }) => sum + file.size,
+            0
           );
-        },
-      });
+          let doneBytes = 0;
+          remoteMedia = [];
+
+          for (const { file, kind } of attachments) {
+            const uploaded = await uploadToCloudinary(
+              file,
+              signature,
+              kind,
+              (loaded) => {
+                if (!mountedRef.current) return;
+                setProgress(
+                  Math.min(
+                    99,
+                    Math.round(((doneBytes + loaded) / totalBytes) * 100)
+                  )
+                );
+              }
+            );
+            doneBytes += file.size;
+            remoteMedia.push(uploaded);
+          }
+
+          if (mountedRef.current) setProgress(100);
+        }
+      }
+
+      if (remoteMedia || attachments.length === 0) {
+        // 2a) Enregistrement de la publication (JSON léger)
+        await axios.post(
+          `${apiUrl}/api/publications`,
+          {
+            userId: String(userId),
+            content: publicationText,
+            remoteMedia: remoteMedia || [],
+          },
+          { headers: authHeaders, timeout: 30000 }
+        );
+      } else {
+        // 2b) Ancien mode : fichiers envoyés au serveur
+        const formData = new FormData();
+        formData.append("userId", String(userId));
+        formData.append("content", publicationText);
+        attachments.forEach(({ file }) => {
+          formData.append("media", file);
+        });
+
+        await axios.post(`${apiUrl}/api/publications`, formData, {
+          headers: authHeaders,
+          onUploadProgress: (event) => {
+            if (!mountedRef.current || !event.total) return;
+            setProgress(
+              Math.min(100, Math.round((event.loaded / event.total) * 100))
+            );
+          },
+        });
+      }
 
       if (mountedRef.current) {
         navigate("/publication", { replace: true });
@@ -287,6 +370,8 @@ export default function CreatePublication({ currentUser }) {
       setPublishError(
         typeof message === "string"
           ? message
+          : !error.response && !error.isAxiosError && error.message
+            ? `${error.message} Ton contenu est conservé ici.`
           : error.response
             ? "La publication a échoué. Ton contenu est conservé ici."
             : "La réponse du serveur n’est pas arrivée. Vérifie le fil avant de réessayer pour éviter un doublon."
@@ -428,7 +513,7 @@ export default function CreatePublication({ currentUser }) {
             </div>
 
             <p className="onvm-compose__hint">
-              Photos, vidéos ou audio · 200 Mo maximum par fichier
+              Photos, vidéos ou audio · 500 Mo maximum par fichier
             </p>
 
             {fileError && (

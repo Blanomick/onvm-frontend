@@ -6,6 +6,7 @@ import {
   FiPlus,
   FiHeart,
   FiUser,
+  FiPlayCircle,
 } from "react-icons/fi";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./BottomNav.css";
@@ -88,6 +89,7 @@ try {
   const messagesActive =
     pathname === "/conversations" || pathname.startsWith("/chat/");
   const createActive = pathname === "/create-publication";
+  const videosActive = pathname === "/videos";
   const activityActive = pathname === "/notifications";
   const profileActive =
     pathname === "/profile" ||
@@ -104,6 +106,16 @@ try {
           aria-current={homeActive ? "page" : undefined}
         >
           <FiHome className="onvm-nav-home" aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className={`onvm-nav-button ${videosActive ? "is-active" : ""}`}
+          onClick={() => navigate("/videos")}
+          aria-label="Vidéos"
+          aria-current={videosActive ? "page" : undefined}
+        >
+          <FiPlayCircle aria-hidden="true" />
         </button>
 
         <button

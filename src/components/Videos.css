@@ -1,0 +1,355 @@
+/* ONVM — fil vidéo vertical façon TikTok / Reels */
+
+.onvm-videos {
+  --onvm-nav-h: calc(66px + env(safe-area-inset-bottom, 0px));
+  position: fixed;
+  inset: 0;
+  background: #000;
+  color: #fff;
+  overflow: hidden;
+  font-family: inherit;
+}
+
+.onvm-videos button {
+  font: inherit;
+  color: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Barre du haut */
+.onvm-videos__top {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 14px 10px;
+  background: linear-gradient(rgba(0, 0, 0, 0.55), transparent);
+  pointer-events: none;
+}
+
+.onvm-videos__top h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.onvm-videos__top button {
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  cursor: pointer;
+}
+
+.onvm-videos__top svg {
+  width: 22px;
+  height: 22px;
+}
+
+/* Fil défilant avec arrêt sur chaque vidéo */
+.onvm-videos__feed {
+  position: absolute;
+  inset: 0 0 var(--onvm-nav-h);
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.onvm-videos__feed::-webkit-scrollbar {
+  display: none;
+}
+
+.onvm-videos__slot {
+  height: 100%;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+/* Une vidéo */
+.onvm-reel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  overflow: hidden;
+  background: #000;
+}
+
+.onvm-reel__stage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.onvm-reel__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #000;
+}
+
+@media (min-aspect-ratio: 3/4) {
+  .onvm-reel__video {
+    object-fit: contain;
+  }
+}
+
+.onvm-reel__failed {
+  padding: 24px;
+  color: #bbb;
+  text-align: center;
+}
+
+.onvm-reel__paused {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.onvm-reel__paused svg {
+  width: 38px;
+  height: 38px;
+  margin-left: 5px;
+  fill: #fff;
+}
+
+.onvm-reel__burst {
+  position: absolute;
+  pointer-events: none;
+  animation: onvm-burst 800ms ease-out forwards;
+}
+
+.onvm-reel__burst svg {
+  width: 110px;
+  height: 110px;
+  fill: #ff2d55;
+  stroke: #ff2d55;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes onvm-burst {
+  0% { transform: scale(0.3); opacity: 0; }
+  25% { transform: scale(1.15); opacity: 1; }
+  60% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(1.3) translateY(-30px); opacity: 0; }
+}
+
+/* Boutons à droite */
+.onvm-reel__actions {
+  position: absolute;
+  right: 10px;
+  bottom: 90px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.onvm-reel__avatar {
+  padding: 0;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+}
+
+.onvm-reel__action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+}
+
+.onvm-reel__action svg {
+  width: 32px;
+  height: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+  transition: transform 160ms ease;
+}
+
+.onvm-reel__action:active svg {
+  transform: scale(0.85);
+}
+
+.onvm-reel__action span {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.onvm-reel__action.is-liked svg {
+  fill: #ff2d55;
+  stroke: #ff2d55;
+}
+
+/* Texte en bas */
+.onvm-reel__info {
+  position: absolute;
+  left: 0;
+  right: 70px;
+  bottom: 0;
+  z-index: 4;
+  padding: 40px 14px 18px;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.65));
+}
+
+.onvm-reel__author {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.onvm-reel__caption {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.onvm-reel__caption.is-expanded {
+  -webkit-line-clamp: unset;
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+.onvm-reel__progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.onvm-reel__progress span {
+  display: block;
+  height: 100%;
+  background: #fff;
+  transition: width 250ms linear;
+}
+
+/* États vides / chargement */
+.onvm-videos__empty {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+  text-align: center;
+  color: #ccc;
+}
+
+.onvm-videos__empty button {
+  padding: 11px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: #000;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.onvm-videos__spinner {
+  width: 34px;
+  height: 34px;
+  border: 3px solid rgba(255, 255, 255, 0.25);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: onvm-spin 800ms linear infinite;
+}
+
+@keyframes onvm-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Feuille des commentaires */
+.onvm-videos__sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.onvm-videos__sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 75dvh;
+  overflow-y: auto;
+  padding: 0 16px env(safe-area-inset-bottom, 12px);
+  border-radius: 18px 18px 0 0;
+  background: #fff;
+  color: #222;
+  animation: onvm-sheet 220ms ease-out;
+}
+
+.onvm-videos__sheet .onvm-comments {
+  margin-top: 0;
+}
+
+@keyframes onvm-sheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.onvm-videos__toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--onvm-nav-h) + 20px);
+  z-index: 3100;
+  transform: translateX(-50%);
+  padding: 10px 16px;
+  border-radius: 999px;
+  background: rgba(30, 30, 30, 0.92);
+  color: #fff;
+  font-size: 14px;
+}
+
+/* Barre de navigation en mode sombre sur cette page */
+.onvm-videos .onvm-bottom-nav {
+  background: #000;
+}
+
+.onvm-videos .onvm-bottom-nav .onvm-nav-button {
+  color: #8e8e93;
+}
+
+.onvm-videos .onvm-bottom-nav .onvm-nav-button.is-active {
+  color: #fff;
+}
