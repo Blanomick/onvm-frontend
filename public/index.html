@@ -2,6 +2,9 @@
 <html lang="fr" translate="no">
   <head>
     <meta charset="UTF-8" />
+    <!-- Les fichiers du site se chargent toujours depuis la racine,
+         même quand on recharge une page comme /profile/12 -->
+    <base href="/" />
 
     <meta
   name="viewport"
@@ -14,7 +17,8 @@
       content="ONVM : partage tes idées, découvre des publications et échange avec tes proches."
     />
     <meta name="google" content="notranslate" />
-    <meta name="theme-color" content="#000000" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="ONVM" />
 
     <!-- Logo dans l’onglet du navigateur -->
@@ -34,7 +38,7 @@
       name="apple-mobile-web-app-status-bar-style"
       content="default"
     />
-    <link rel="apple-touch-icon" href="/logo192.png" />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
     <!-- Police -->
     <link

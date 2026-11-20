@@ -118,6 +118,7 @@ jobs:
           @capacitor/core@8
           @capacitor/android@8
           @capacitor/cli@8
+          @capgo/capacitor-updater@8.54.2
 
       - name: Compiler React sur GitHub
         run: npm run build

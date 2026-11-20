@@ -1,0 +1,90 @@
+name: Publier une mise à jour OTA ONVM
+
+# Construit le site, l'emballe en .zip et le publie en Release GitHub.
+# Les applis Android ONVM le téléchargent seules (via /api/ota/update)
+# et l'installent à la prochaine mise en arrière-plan.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version OTA (ex : 1.0.1) — toujours plus grande que la précédente"
+        required: true
+        type: string
+
+      min_native_code:
+        description: "Code Android minimum compatible (laisser 1 sauf nouveau plugin natif)"
+        required: true
+        default: "1"
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: onvm-ota
+  cancel-in-progress: false
+
+jobs:
+  ota:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      CI: "false"
+      GENERATE_SOURCEMAP: "false"
+      REACT_APP_API_URL: "https://onvm-z085.onrender.com"
+      REACT_APP_WEBSOCKET_URL: "https://onvm-z085.onrender.com"
+      OTA_VERSION: ${{ inputs.version }}
+      MIN_NATIVE_CODE: ${{ inputs.min_native_code }}
+
+    steps:
+      - name: Télécharger le projet
+        uses: actions/checkout@v4
+
+      - name: Vérifier la version
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$OTA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Utilise une version comme 1.0.1"; exit 1; }
+          [[ "$MIN_NATIVE_CODE" =~ ^[1-9][0-9]*$ ]] || { echo "Code Android minimum invalide"; exit 1; }
+          if gh release view "ota-$OTA_VERSION" >/dev/null 2>&1; then
+            echo "La version $OTA_VERSION existe déjà. Choisis un numéro plus grand."
+            exit 1
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Installer Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Installer les dépendances
+        run: npm install --legacy-peer-deps
+
+      - name: Compiler le site
+        run: npm run build
+
+      - name: Emballer la mise à jour
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s build/index.html
+          (cd build && zip -qr "../onvm-$OTA_VERSION.zip" .)
+          CHECKSUM=$(sha256sum "onvm-$OTA_VERSION.zip" | cut -d' ' -f1)
+          echo "CHECKSUM=$CHECKSUM" >> "$GITHUB_ENV"
+          ls -lh "onvm-$OTA_VERSION.zip"
+
+      - name: Publier la Release OTA
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BODY=$(printf '{"version":"%s","checksum":"%s","minNativeCode":%s}' "$OTA_VERSION" "$CHECKSUM" "$MIN_NATIVE_CODE")
+          gh release create "ota-$OTA_VERSION" "onvm-$OTA_VERSION.zip" \
+            --title "Mise à jour OTA $OTA_VERSION" \
+            --notes "$BODY" \
+            --target "$GITHUB_SHA"
+          echo "Mise à jour $OTA_VERSION publiée. Les applis la recevront dans les minutes qui viennent."
