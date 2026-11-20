@@ -306,6 +306,7 @@ export default function CreatePublication({ currentUser }) {
           remoteMedia = [];
 
           for (const { file, kind } of attachments) {
+            const offset = doneBytes;
             const uploaded = await uploadToCloudinary(
               file,
               signature,
@@ -315,7 +316,7 @@ export default function CreatePublication({ currentUser }) {
                 setProgress(
                   Math.min(
                     99,
-                    Math.round(((doneBytes + loaded) / totalBytes) * 100)
+                    Math.round(((offset + loaded) / totalBytes) * 100)
                   )
                 );
               }
