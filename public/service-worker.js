@@ -5,8 +5,8 @@
    - Les appels au serveur (API, temps réel, Cloudinary) ne sont jamais
      mis en cache. */
 
-const CACHE_STATIC = "onvm-static-v2";
-const CACHE_PAGES = "onvm-pages-v2";
+const CACHE_STATIC = "onvm-static-v3";
+const CACHE_PAGES = "onvm-pages-v3";
 const KEEP = [CACHE_STATIC, CACHE_PAGES];
 
 self.addEventListener("install", (event) => {
@@ -83,13 +83,15 @@ self.addEventListener("fetch", (event) => {
       caches.match(request).then(
         (cached) =>
           cached ||
-          fetch(request).then((response) => {
-            if (response.ok) {
-              const copy = response.clone();
-              caches.open(CACHE_STATIC).then((cache) => cache.put(request, copy));
-            }
-            return response;
-          })
+          fetch(request)
+            .then((response) => {
+              if (response.ok) {
+                const copy = response.clone();
+                caches.open(CACHE_STATIC).then((cache) => cache.put(request, copy));
+              }
+              return response;
+            })
+            .catch(() => Response.error())
       )
     );
     return;
@@ -104,7 +106,7 @@ self.addEventListener("fetch", (event) => {
             if (response.ok) cache.put(request, response.clone());
             return response;
           })
-          .catch(() => cached);
+          .catch(() => cached || Response.error());
         return cached || network;
       })
     )
