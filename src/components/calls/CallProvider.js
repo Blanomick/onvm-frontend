@@ -30,6 +30,35 @@ export const QUALITY_OPTIONS = Object.entries(QUALITIES).map(([value, q]) => ({
 }));
 const DEFAULT_QUALITY = "1080";
 
+// Ajoute un débit de départ aux codecs vidéo de la description envoyée à
+// l'autre : sans ça, WebRTC démarre à ~300 kb/s et l'image reste floue
+// longtemps, quelle que soit la qualité choisie.
+function tuneVideoSdp(description) {
+  if (!description?.sdp) return description;
+  const sections = description.sdp.split(/\r\n(?=m=)/);
+  const tuned = sections.map((section) => {
+    if (!section.startsWith("m=video")) return section;
+    const lines = section.split("\r\n");
+    const payloads = [];
+    lines.forEach((line) => {
+      const match = line.match(/^a=rtpmap:(\d+) (VP8|VP9|H264|AV1)\//i);
+      if (match) payloads.push(match[1]);
+    });
+    payloads.forEach((pt) => {
+      const extra = "x-google-start-bitrate=1500;x-google-min-bitrate=250";
+      const index = lines.findIndex((line) => line.startsWith(`a=fmtp:${pt} `));
+      if (index >= 0) {
+        if (!lines[index].includes("x-google-start-bitrate")) lines[index] += `;${extra}`;
+      } else {
+        const rtpmap = lines.findIndex((line) => line.startsWith(`a=rtpmap:${pt} `));
+        lines.splice(rtpmap + 1, 0, `a=fmtp:${pt} ${extra}`);
+      }
+    });
+    return lines.join("\r\n");
+  });
+  return { type: description.type, sdp: tuned.join("\r\n") };
+}
+
 export function useCalls() {
   return useContext(CallsContext);
 }
@@ -182,6 +211,53 @@ useEffect(() => {
   };
 }, [currentUser?.id]);
 
+  // Sonnerie d'appel entrant : vraie mélodie en boucle (fichier audio).
+  // Elle démarre seule quand le navigateur l'autorise (appli Android,
+  // site déjà touché), sinon au premier appui sur l'écran d'appel.
+  const ringtoneRef = useRef(null);
+  const [ringtonePlaying, setRingtonePlaying] = useState(false);
+
+  useEffect(() => {
+    if (call?.phase !== "incoming") return undefined;
+
+    let stopped = false;
+    let audio = ringtoneRef.current;
+    if (!audio) {
+      audio = new Audio("/sounds/onvm-ringtone.wav");
+      audio.loop = true;
+      audio.preload = "auto";
+      ringtoneRef.current = audio;
+    }
+    audio.volume = 1;
+    audio.currentTime = 0;
+
+    const tryPlay = () => {
+      if (stopped) return;
+      audio
+        .play()
+        .then(() => {
+          if (!stopped) setRingtonePlaying(true);
+        })
+        .catch(() => {
+          if (!stopped) setRingtonePlaying(false);
+        });
+    };
+
+    tryPlay();
+    // Si le son était bloqué : le moindre appui le relance
+    document.addEventListener("pointerdown", tryPlay, true);
+    document.addEventListener("keydown", tryPlay, true);
+
+    return () => {
+      stopped = true;
+      document.removeEventListener("pointerdown", tryPlay, true);
+      document.removeEventListener("keydown", tryPlay, true);
+      audio.pause();
+      audio.currentTime = 0;
+      setRingtonePlaying(false);
+    };
+  }, [call?.id, call?.phase]);
+
   // Sonnerie synthétique, arrêtée dès que l’appel change d’état.
   useEffect(() => {
     const context = audioContextRef.current;
@@ -189,7 +265,9 @@ useEffect(() => {
     if (
       !soundEnabled ||
       !context ||
-      !["incoming", "ringing"].includes(call?.phase)
+      !["incoming", "ringing"].includes(call?.phase) ||
+      // la mélodie joue déjà : pas de bips en plus
+      (call?.phase === "incoming" && ringtonePlaying)
     ) {
       return;
     }
@@ -240,7 +318,7 @@ useEffect(() => {
         }
       });
     };
-  }, [soundEnabled, call?.phase]);
+  }, [soundEnabled, call?.phase, ringtonePlaying]);
 
   // Vibration pendant un appel entrant (Android)
   useEffect(() => {
@@ -533,7 +611,7 @@ useEffect(() => {
 
         socket.emit("call:signal", {
           callId,
-          description: item.pc.localDescription.toJSON(),
+          description: tuneVideoSdp(item.pc.localDescription.toJSON()),
         });
       } catch (error) {
         fail(item, error);
@@ -565,7 +643,7 @@ useEffect(() => {
 
             socket.emit("call:signal", {
               callId,
-              description: item.pc.localDescription.toJSON(),
+              description: tuneVideoSdp(item.pc.localDescription.toJSON()),
             });
           }
         } else if (candidate) {
@@ -580,17 +658,50 @@ useEffect(() => {
       }
     }
 
+    // Rouvre la caméra à la bonne taille quand le téléphone ignore la
+    // demande de changement (fréquent sur Android) et remplace l'image
+    // envoyée sans couper l'appel.
+    async function reopenCamera(item, preset) {
+      const old = item.local?.getVideoTracks()[0];
+      const sender = item.pc?.getSenders().find((x) => x.track?.kind === "video" || (!x.track && old));
+      if (!old || !sender?.replaceTrack) return old;
+
+      const facing = old.getSettings?.().facingMode || "user";
+      const constraints = (p) => ({
+        width: { ideal: p.width },
+        height: { ideal: p.height },
+        frameRate: { ideal: p.fps, max: p.fps },
+        facingMode: facing,
+      });
+
+      // Beaucoup de téléphones refusent deux ouvertures de caméra en même temps
+      old.stop();
+      let fresh;
+      try {
+        fresh = await navigator.mediaDevices.getUserMedia({ video: constraints(preset) });
+      } catch {
+        fresh = await navigator.mediaDevices.getUserMedia({ video: constraints(QUALITIES["720"]) });
+      }
+      const track = fresh.getVideoTracks()[0];
+      if (active !== item) {
+        track.stop();
+        return null;
+      }
+
+      track.enabled = item.camera !== false;
+      await sender.replaceTrack(track);
+
+      const stream = new MediaStream([...item.local.getAudioTracks(), track]);
+      item.local = stream;
+      update(item, { local: stream });
+      return track;
+    }
+
     // Règle ce que J'ENVOIE : taille de la caméra + débit + priorité à la netteté
     async function applySendQuality(item, value) {
       const preset = QUALITIES[value];
-      const track = item?.local?.getVideoTracks()[0];
+      let track = item?.local?.getVideoTracks()[0];
       if (!preset || !track || active !== item) return;
-
-      try {
-        track.contentHint = Number(value) >= 1080 ? "detail" : "motion";
-      } catch {
-        // non pris en charge
-      }
 
       try {
         await track.applyConstraints({
@@ -599,29 +710,50 @@ useEffect(() => {
           frameRate: { ideal: preset.fps, max: preset.fps },
         });
       } catch {
-        // la caméra garde sa taille actuelle ; le débit change quand même
+        // on rouvrira la caméra si besoin
       }
       if (active !== item) return;
 
+      // Côté court de l'image (le téléphone peut filmer en portrait)
+      const shortSide = (t) => {
+        const st = t.getSettings();
+        return st.width && st.height ? Math.min(st.width, st.height) : 0;
+      };
+
+      // Qualité plus haute demandée mais caméra restée petite : on la rouvre
+      if (shortSide(track) && shortSide(track) < preset.height * 0.85) {
+        try {
+          track = (await reopenCamera(item, preset)) || track;
+        } catch (error) {
+          console.warn("Caméra :", error.message);
+          track = item.local?.getVideoTracks()[0] || track;
+        }
+      }
+      if (active !== item || !track) return;
+
+      try {
+        track.contentHint = Number(value) >= 720 ? "detail" : "motion";
+      } catch {
+        // non pris en charge
+      }
+
       const settings = track.getSettings();
-      const sender = item.pc
-        ?.getSenders()
-        .find((candidate) => candidate.track?.kind === "video");
+      const sender = item.pc?.getSenders().find((x) => x.track?.kind === "video");
 
       if (sender?.getParameters && sender.setParameters) {
         const params = sender.getParameters();
         if (!params.encodings || !params.encodings.length) params.encodings = [{}];
 
-        // Si la caméra filme plus grand que demandé (ex. 1080p en mode 360p),
-        // on réduit l'image envoyée.
-        const scale =
-          settings.height && settings.height > preset.height
-            ? settings.height / preset.height
-            : 1;
+        // Caméra plus grande que la qualité choisie (ex. 1080p en mode 360p) :
+        // on réduit vraiment l'image envoyée.
+        const side = shortSide(track);
+        const scale = side && side > preset.height ? side / preset.height : 1;
 
         params.encodings[0].maxBitrate = preset.bitrate;
         params.encodings[0].maxFramerate = preset.fps;
         params.encodings[0].scaleResolutionDownBy = scale;
+        params.encodings[0].priority = "high";
+        params.encodings[0].networkPriority = "high";
 
         try {
           await sender.setParameters({
@@ -630,6 +762,8 @@ useEffect(() => {
           });
         } catch {
           try {
+            delete params.encodings[0].priority;
+            delete params.encodings[0].networkPriority;
             await sender.setParameters(params);
           } catch (error) {
             console.warn("Qualité vidéo :", error.message);
@@ -685,10 +819,21 @@ useEffect(() => {
         await applySendQuality(item, value);
       } finally {
         update(item, { changingQuality: false });
-        setTimeout(() => setNotice((current) =>
-          current.startsWith("Qualité :") ? "" : current
-        ), 2500);
       }
+
+      // L'autre téléphone change ce qu'il envoie : on affiche l'image
+      // réellement reçue quelques secondes après.
+      setTimeout(() => {
+        if (active !== item) return;
+        setNotice(
+          item.receiveInfo
+            ? `Qualité ${QUALITIES[value].label} · image reçue : ${item.receiveInfo}`
+            : `Qualité : ${QUALITIES[value].label}`
+        );
+        setTimeout(() => setNotice((current) =>
+          current.startsWith("Qualité") ? "" : current
+        ), 4000);
+      }, 4000);
     }
 
     actions.current = {
@@ -773,6 +918,10 @@ useEffect(() => {
       const item = active;
       if (!item || item.id !== callId || !QUALITIES[value]) return;
       update(item, { requestedQuality: value });
+      setNotice(`${item.peer?.username || "L’autre personne"} a choisi : ${QUALITIES[value].label}`);
+      setTimeout(() => setNotice((current) =>
+        current.includes("a choisi") ? "" : current
+      ), 3000);
       applySendQuality(item, value);
     });
 
@@ -853,7 +1002,7 @@ useEffect(() => {
           call={call}
           qualityOptions={QUALITY_OPTIONS}
           photoUrl={photoUrl}
-          soundEnabled={soundEnabled}
+          soundEnabled={soundEnabled || ringtonePlaying}
           enableSound={enableSound}
           actions={actions}
           MediaView={MediaView}
