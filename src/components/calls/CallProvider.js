@@ -19,6 +19,7 @@ const CallsContext = createContext(null);
 // Qualité vidéo : taille de l'image + débit maximum envoyé.
 // Sans débit plus élevé, le navigateur garde une image floue même en 1080p.
 const QUALITIES = {
+  auto: { width: 1280, height: 720, fps: 30, bitrate: 1500000, label: "Auto · s’adapte au réseau", adaptive: true },
   "360": { width: 640, height: 360, fps: 24, bitrate: 450000, label: "Économie · 360p" },
   "720": { width: 1280, height: 720, fps: 30, bitrate: 2000000, label: "HD · 720p" },
   "1080": { width: 1920, height: 1080, fps: 30, bitrate: 4500000, label: "Full HD · 1080p" },
@@ -28,7 +29,7 @@ export const QUALITY_OPTIONS = Object.entries(QUALITIES).map(([value, q]) => ({
   value,
   label: q.label,
 }));
-const DEFAULT_QUALITY = "1080";
+const DEFAULT_QUALITY = "auto";
 
 // Ajoute un débit de départ aux codecs vidéo de la description envoyée à
 // l'autre : sans ça, WebRTC démarre à ~300 kb/s et l'image reste floue
@@ -45,7 +46,7 @@ function tuneVideoSdp(description) {
       if (match) payloads.push(match[1]);
     });
     payloads.forEach((pt) => {
-      const extra = "x-google-start-bitrate=1500;x-google-min-bitrate=250";
+      const extra = "x-google-start-bitrate=700;x-google-min-bitrate=100";
       const index = lines.findIndex((line) => line.startsWith(`a=fmtp:${pt} `));
       if (index >= 0) {
         if (!lines[index].includes("x-google-start-bitrate")) lines[index] += `;${extra}`;
@@ -395,6 +396,7 @@ useEffect(() => {
         }
 
         clearTimeout(item.disconnectTimer);
+        clearTimeout(item.restartTimer);
         clearInterval(item.statsTimer);
 
         if (item.pc) {
@@ -492,6 +494,9 @@ useEffect(() => {
 
         if (pc.connectionState === "connected") {
           clearTimeout(item.disconnectTimer);
+          clearTimeout(item.restartTimer);
+          item.disconnectTimer = null;
+          prioritizeAudio(item);
           update(item, {
   phase: "connected",
   connectedAt: item.connectedAt || Date.now(),
@@ -503,15 +508,34 @@ useEffect(() => {
             applySendQuality(item, item.requestedQuality || DEFAULT_QUALITY);
             watchStats(item);
           }
-        } else if (pc.connectionState === "failed") {
-          cleanup("Connexion impossible. Vérifie le réseau et le serveur TURN.", true);
-        } else if (pc.connectionState === "disconnected") {
-          update(item, { phase: "reconnecting" });
+        } else if (
+          pc.connectionState === "failed" ||
+          pc.connectionState === "disconnected"
+        ) {
+          // Réseau faible ou changement 4G/Wi-Fi : on cherche un nouveau
+          // chemin (relais compris) au lieu de raccrocher, comme WhatsApp.
+          const wasConnected = Boolean(item.connectedAt);
+          update(item, { phase: wasConnected ? "reconnecting" : item.phase });
 
-          clearTimeout(item.disconnectTimer);
-          item.disconnectTimer = setTimeout(() => {
-            if (active === item) cleanup("La connexion a été interrompue.", true);
-          }, 15000);
+          clearTimeout(item.restartTimer);
+          item.restartTimer = setTimeout(
+            () => restartIce(item),
+            pc.connectionState === "failed" ? 0 : 2500
+          );
+
+          if (!item.disconnectTimer) {
+            item.disconnectTimer = setTimeout(() => {
+              item.disconnectTimer = null;
+              if (active === item && item.pc?.connectionState !== "connected") {
+                cleanup(
+                  wasConnected
+                    ? "La connexion a été perdue."
+                    : "Connexion impossible : réseau trop faible ou bloqué.",
+                  true
+                );
+              }
+            }, 35000);
+          }
         }
       };
 
@@ -523,6 +547,53 @@ useEffect(() => {
       });
 
       return true;
+    }
+
+    // Le son passe avant l'image quand le réseau est faible
+    function prioritizeAudio(item) {
+      item.pc?.getSenders().forEach((sender) => {
+        if (sender.track?.kind !== "audio" || !sender.getParameters) return;
+        try {
+          const params = sender.getParameters();
+          if (!params.encodings || !params.encodings.length) return;
+          params.encodings[0].priority = "high";
+          params.encodings[0].networkPriority = "high";
+          sender.setParameters(params).catch(() => undefined);
+        } catch {
+          // non pris en charge
+        }
+      });
+    }
+
+    // Relance la recherche de chemin réseau (seul l'appelant envoie l'offre)
+    async function restartIce(item) {
+      const pc = item?.pc;
+      if (active !== item || !pc || !socket.connected) return;
+      if (["connected", "closed"].includes(pc.connectionState)) return;
+      if (!item.caller) return;
+
+      try {
+        // Offre précédente restée sans réponse (coupure) : on l'annule
+        if (pc.signalingState === "have-local-offer") {
+          await pc.setLocalDescription({ type: "rollback" });
+        }
+        if (pc.signalingState !== "stable" || active !== item) return;
+
+        const offer = await pc.createOffer({ iceRestart: true });
+        if (active !== item) return;
+        await pc.setLocalDescription(offer);
+        if (active !== item) return;
+        socket.emit("call:signal", {
+          callId: item.id,
+          description: tuneVideoSdp(pc.localDescription.toJSON()),
+        });
+      } catch (error) {
+        console.warn("Reconnexion de l’appel :", error.message);
+      }
+
+      // Toujours pas reconnecté : on réessaie (jusqu'au délai maximum)
+      clearTimeout(item.restartTimer);
+      item.restartTimer = setTimeout(() => restartIce(item), 8000);
     }
 
     async function start(conversationId, type) {
@@ -732,7 +803,7 @@ useEffect(() => {
       if (active !== item || !track) return;
 
       try {
-        track.contentHint = Number(value) >= 720 ? "detail" : "motion";
+        track.contentHint = preset.adaptive ? "motion" : Number(value) >= 720 ? "detail" : "motion";
       } catch {
         // non pris en charge
       }
@@ -758,7 +829,8 @@ useEffect(() => {
         try {
           await sender.setParameters({
             ...params,
-            degradationPreference: value === "360" ? "balanced" : "maintain-resolution",
+            degradationPreference:
+              value === "360" || preset.adaptive ? "balanced" : "maintain-resolution",
           });
         } catch {
           try {
@@ -866,6 +938,24 @@ useEffect(() => {
 
     socket.on("connect", () => {
       if (!disposed) setReady(true);
+
+      // Retour du serveur pendant un appel : on se rattache à l'appel
+      const item = active;
+      if (item?.signalLost) {
+        item.signalLost = false;
+        request("call:resume", { callId: item.id })
+          .then(() => {
+            if (active === item && item.pc?.connectionState !== "connected") {
+              restartIce(item);
+            }
+          })
+          .catch((error) => {
+            // Le serveur a répondu que l'appel n'existe plus
+            if (active === item && error.message !== "Le serveur ne répond pas.") {
+              cleanup("L’appel s’est terminé pendant la coupure.");
+            }
+          });
+      }
     });
 
     socket.on("connect_error", (error) => {
@@ -877,6 +967,14 @@ useEffect(() => {
 
     socket.on("disconnect", () => {
       if (!disposed) setReady(false);
+
+      // Appel décroché : l'image passe directement entre les téléphones,
+      // on ne raccroche pas pour une coupure du serveur.
+      const item = active;
+      if (item?.pc && ["connecting", "connected", "reconnecting"].includes(item.phase)) {
+        item.signalLost = true;
+        return;
+      }
       cleanup("Connexion aux appels interrompue.");
     });
 

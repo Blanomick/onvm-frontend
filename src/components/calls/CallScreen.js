@@ -259,7 +259,7 @@ export default function CallScreen({
             <label className="oc-quality">
               <span>Qualité de l’appel</span>
               <select
-                value={call.requestedQuality || "1080"}
+                value={call.requestedQuality || "auto"}
                 disabled={call.changingQuality || !connected}
                 onChange={(event) =>
                   actions.current.quality?.(event.target.value)
