@@ -1,0 +1,298 @@
+/* Feuille de partage ONVM */
+.onvm-share__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  animation: onvm-share-fade 180ms ease-out;
+}
+
+.onvm-share {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  max-height: 88dvh;
+  overflow-y: auto;
+  padding: 6px 18px calc(18px + env(safe-area-inset-bottom, 0px));
+  border-radius: 22px 22px 0 0;
+  background: #fff;
+  color: #111;
+  box-sizing: border-box;
+  font-family: inherit;
+  animation: onvm-share-up 240ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.onvm-share button {
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.onvm-share button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.onvm-share__handle {
+  width: 40px;
+  height: 5px;
+  margin: 6px auto 8px;
+  border-radius: 99px;
+  background: #d1d5db;
+}
+
+.onvm-share__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.onvm-share__head h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.onvm-share__head button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #111;
+  font-size: 18px;
+}
+
+/* QR code */
+.onvm-share__qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.onvm-share__qr-box {
+  display: grid;
+  place-items: center;
+  width: 220px;
+  height: 220px;
+  padding: 12px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  box-sizing: content-box;
+}
+
+.onvm-share__qr-box canvas {
+  width: 220px !important;
+  height: 220px !important;
+}
+
+.onvm-share__qr strong {
+  margin-top: 6px;
+  font-size: 17px;
+}
+
+.onvm-share__qr span {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* Lien */
+.onvm-share__link {
+  display: flex;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
+  border-radius: 14px;
+  background: #f3f4f6;
+}
+
+.onvm-share__link input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #111;
+  font: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.onvm-share__link button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: #111827;
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.onvm-share__error {
+  margin: 8px 2px 0;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+/* Réseaux */
+.onvm-share__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 14px 8px;
+  margin: 18px 0 6px;
+}
+
+.onvm-share__grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #374151;
+  font-size: 12px;
+}
+
+.onvm-share__grid button span {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 23px;
+  transition: transform 120ms ease;
+}
+
+.onvm-share__grid button:active span {
+  transform: scale(0.92);
+}
+
+/* Amis ONVM */
+.onvm-share__friends {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.onvm-share__friends h4 {
+  margin: 0 0 10px;
+  font-size: 15px;
+}
+
+.onvm-share__search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: #f3f4f6;
+  color: #9ca3af;
+}
+
+.onvm-share__search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  color: #111;
+  outline: none;
+}
+
+.onvm-share__friends ul {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onvm-share__friends li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.onvm-share__friends img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #e5e7eb;
+}
+
+.onvm-share__friends li span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onvm-share__friends li button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 99px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.onvm-share__friends li button.is-sent {
+  background: #e5e7eb;
+  color: #374151;
+  opacity: 1;
+}
+
+.onvm-share__toast {
+  position: sticky;
+  bottom: 0;
+  width: fit-content;
+  margin: 12px auto 0;
+  padding: 9px 16px;
+  border-radius: 99px;
+  background: rgba(17, 24, 39, 0.92);
+  color: #fff;
+  font-size: 14px;
+}
+
+.onvm-share__spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #111827;
+  border-radius: 50%;
+  animation: onvm-share-spin 800ms linear infinite;
+}
+
+@keyframes onvm-share-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes onvm-share-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes onvm-share-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

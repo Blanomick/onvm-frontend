@@ -8,7 +8,9 @@ import 'cropperjs/dist/cropper.css';
 import BottomNav from './BottomNav';
 import { FaHome, FaSearch, FaPlus, FaBell, FaUser  , FaUsers} from 'react-icons/fa';
 import axios from 'axios'; // ✅ nécessaire pour handleComment
-import { FiSettings } from 'react-icons/fi';
+import { FiSettings, FiShare2 } from 'react-icons/fi';
+import { BsQrCode } from 'react-icons/bs';
+import ShareSheet from './ShareSheet';
 import { useTranslation } from 'react-i18next';
 import BioText from "./BioText";
 import {
@@ -510,9 +512,10 @@ const handleComment = async (publicationId) => {
 
 
   // Share a post
-  const handleShare = (postId) => {
-    alert(`Publication partagée : ${postId}`);
-  };
+  // Partage : publication (lien unique) ou profil (QR code + lien unique)
+  const [shareTarget, setShareTarget] = useState(null);
+  const handleShare = (postId) => setShareTarget({ type: 'p', id: postId });
+  const handleShareProfile = () => setShareTarget({ type: 'u', id: profileUser?.id });
 
   // Fetch comments for a post
   const fetchComments = async (postId) => {
@@ -753,8 +756,41 @@ console.log("🧪 Retweets :", retweets);
         </button>
       </>
     )}
+
+    <button
+      type="button"
+      className="onvm-profile-message onvm-profile-share"
+      onClick={handleShareProfile}
+      aria-label={isOwner ? 'Mon QR code et mon lien' : 'Partager ce profil'}
+      title={isOwner ? 'Mon QR code et mon lien' : 'Partager ce profil'}
+    >
+      {isOwner ? <BsQrCode size={17} /> : <FiShare2 size={17} />}
+    </button>
   </div>
 </section>
+
+{shareTarget && profileUser && (
+  <ShareSheet
+    type={shareTarget.type}
+    id={shareTarget.id}
+    title={
+      shareTarget.type === 'u'
+        ? `${profileUser.username || 'Membre ONVM'} sur ONVM`
+        : `Publication de ${profileUser.username || 'ONVM'}`
+    }
+    text={
+      shareTarget.type === 'u'
+        ? isOwner
+          ? 'Retrouve-moi sur ONVM 👇'
+          : `Suis ${profileUser.username || 'ce membre'} sur ONVM`
+        : 'Regarde cette publication sur ONVM'
+    }
+    name={shareTarget.type === 'u' ? profileUser.username || '' : ''}
+    showQr={shareTarget.type === 'u'}
+    currentUser={currentUser}
+    onClose={() => setShareTarget(null)}
+  />
+)}
 
 {isOwner && newProfileImage && (
   <section

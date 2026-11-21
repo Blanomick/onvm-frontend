@@ -1,4 +1,5 @@
   import React, { useState, useEffect, useRef , useCallback} from 'react';
+import ShareSheet from './ShareSheet';
 import axios from 'axios';
 import './Publication.css';
 import MainNavigation from './MainNavigation';
@@ -18,7 +19,6 @@ import {
   FaImage,
   FaVideo,
   FaTimes,                                                        
-  FaCopy,
   FaHeart,
   FaUser,
   FaBell,
@@ -131,7 +131,7 @@ const [shortIndex, setShortIndex] = useState(0);
 const [showCreateOptions, setShowCreateOptions] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [shareModal, setShareModal] = useState(null);
-  const [usersList, setUsersList] = useState([]);
+  const [, setUsersList] = useState([]);
   
   const [selectedPublication, setSelectedPublication] = useState(null);
 
@@ -403,11 +403,6 @@ fetchPublications(); // ← recharge les données mises à jour
       
   
 
-  const copyLink = (publicationId) => {
-    const link = `${window.location.origin}/publication/${publicationId}`;
-    navigator.clipboard.writeText(link);
-    alert('Lien copié dans le presse-papiers.');
-  };
 // Gestion des publications et des utilisateurs au chargement du composant
    
 useEffect(() => {
@@ -427,13 +422,6 @@ useEffect(() => {
 // Gestion du partage d'une publication
 const handleSharePublication = (publicationId) => {
   setShareModal(publicationId);
-  fetchUsersList()
-    .then(() => {
-      console.log('[INFO] Liste des utilisateurs récupérée pour le partage.');
-    })
-    .catch((err) => {
-      console.error('[ERREUR] Erreur lors de la récupération de la liste des utilisateurs pour le partage :', err);
-    });
 };
 
   useEffect(() => {
@@ -709,27 +697,19 @@ const closeShareModal = () => {
   
 </div>
         )}
-{shareModal && (
-  <div className="share-modal">
-    <h4>Partager la publication</h4>
-    <ul>
-
-{usersList.map((u) => (
-  <li key={u.id}>
-    {u.username}
-    <button onClick={() => alert(`Partagé avec ${u.username}`)}>Partager</button>
-  </li>
-))}
-
-
-    </ul>
-    {/* Bouton pour copier le lien */}
-    <button onClick={() => copyLink(shareModal)}>
-      <FaCopy /> Copier le lien
-    </button>
-    <button onClick={closeShareModal}>Fermer</button>
-  </div>
-)}
+{shareModal && (() => {
+  const shared = publications.find((post) => post.id === shareModal) || {};
+  return (
+    <ShareSheet
+      type="p"
+      id={shareModal}
+      title={`${shared.username || "Une publication"} sur ONVM`}
+      text={(shared.content || "Regarde cette publication sur ONVM").slice(0, 100)}
+      currentUser={user}
+      onClose={closeShareModal}
+    />
+  );
+})()}
 
 
 

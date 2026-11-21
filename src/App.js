@@ -21,6 +21,8 @@ import Conversations from './components/Conversations';
 import CreateStory from './components/CreateStory';
 import CreatePublication from './components/CreatePublication';
 import Videos from './components/Videos';
+import SharedLink, { AFTER_LOGIN_KEY } from './components/SharedLink';
+import { useNavigate } from 'react-router-dom';
 import { disablePush } from './utils/push';
 import StoryPage from './components/StoryPage';
 import Invitation from './components/Invitation'; // adapte le chemin si nécessaire
@@ -28,6 +30,27 @@ import Logout from './components/Logout';
 import CreateGroup from './components/CreateGroup';
 import { CallProvider } from "./components/calls";
 import { MessagingProvider } from "./components/MessagingProvider";
+// Après connexion depuis un lien partagé : on revient sur ce lien
+function AfterLoginRedirect({ user }) {
+  const navigate = useNavigate();
+  React.useEffect(() => {
+    if (!user) return;
+    let target = null;
+    try {
+      target = sessionStorage.getItem(AFTER_LOGIN_KEY) || localStorage.getItem(AFTER_LOGIN_KEY);
+      sessionStorage.removeItem(AFTER_LOGIN_KEY);
+      localStorage.removeItem(AFTER_LOGIN_KEY);
+    } catch {
+      target = null;
+    }
+    if (target && /^\/(p|u)\/[A-Za-z0-9]+$/.test(target)) {
+      // laisse la page de connexion finir sa propre redirection
+      setTimeout(() => navigate(target, { replace: true }), 50);
+    }
+  }, [user, navigate]);
+  return null;
+}
+
 function readSavedUser() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -80,7 +103,12 @@ React.useEffect(() => {
 
 
 
+        <AfterLoginRedirect user={user} />
         <Routes>
+
+          {/* Liens de partage uniques (publics, même sans compte) */}
+          <Route path="/p/:code" element={<SharedLink kind="p" user={user} />} />
+          <Route path="/u/:code" element={<SharedLink kind="u" user={user} />} />
 
           <Route path="/create-publication" element={<CreatePublication currentUser={currentUser} />} />
            

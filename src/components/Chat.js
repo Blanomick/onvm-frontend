@@ -18,6 +18,7 @@ import ProfileAvatar from "./ProfileAvatar";
 import { useNavigate, useParams } from 'react-router-dom';
 
 import VoiceMessageBubble from './VoiceMessageBubble';
+import MessageContent from './MessageContent';
 import { VoiceNoteButton, useCalls } from "./calls";
 import './Chat.css';
 
@@ -598,10 +599,9 @@ useEffect(() => {
   )}
 
   {msg.content && (
-                  <div
-                    className="message-html"
-                    dangerouslySetInnerHTML={{ __html: msg.content }}
-                  />
+                  <div className="message-html">
+                    <MessageContent content={msg.content} toAbs={toAbs} />
+                  </div>
                 )}
 
                 {msg.type === 'voice' && msg.voice_url && (

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
+import ShareSheet from "./ShareSheet";
 import axios from "axios";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
@@ -20,11 +21,6 @@ import "./Videos.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
 const PAGE_SIZE = 6;
-
-function shareBase() {
-  const { origin, hostname } = window.location;
-  return hostname === "localhost" ? "https://onvm.org" : origin;
-}
 
 function formatCount(value) {
   const n = Number(value) || 0;
@@ -238,6 +234,7 @@ export default function Videos({ user }) {
   const [muted, setMuted] = useState(true);
   const [commentsFor, setCommentsFor] = useState(null);
   const [toast, setToast] = useState("");
+  const [shareFor, setShareFor] = useState(null);
 
   const userId = user?.id;
   const startId = Number(new URLSearchParams(location.search).get("v")) || null;
@@ -342,21 +339,8 @@ export default function Videos({ user }) {
     }
   };
 
-  const handleShare = async (item) => {
-    const url = `${shareBase()}/videos?v=${item.id}`;
-    const title = `Vidéo de @${item.username || "ONVM"}`;
-
-    try {
-      if (navigator.share) {
-        await navigator.share({ title, url });
-        return;
-      }
-      await navigator.clipboard.writeText(url);
-      setToast("Lien copié");
-    } catch (shareError) {
-      if (shareError?.name !== "AbortError") setToast("Partage impossible.");
-    }
-  };
+  // Lien unique de la vidéo + WhatsApp, Facebook, amis ONVM…
+  const handleShare = (item) => setShareFor(item);
 
   const openComments = async (item) => {
     setCommentsFor({ ...item, comments: item.comments || [] });
@@ -394,7 +378,7 @@ export default function Videos({ user }) {
           <div key={item.id} data-index={index} className="onvm-videos__slot">
             <VideoSlide
               item={item}
-              active={index === activeIndex && !commentsFor}
+              active={index === activeIndex && !commentsFor && !shareFor}
               near={Math.abs(index - activeIndex) <= 1}
               muted={muted}
               onToggleMute={() => setMuted((value) => !value)}
@@ -454,6 +438,17 @@ export default function Videos({ user }) {
             />
           </div>
         </div>
+      )}
+
+      {shareFor && (
+        <ShareSheet
+          type="p"
+          id={shareFor.id}
+          title={`Vidéo de @${shareFor.username || "ONVM"}`}
+          text={(shareFor.content || "Regarde cette vidéo sur ONVM").slice(0, 100)}
+          currentUser={user}
+          onClose={() => setShareFor(null)}
+        />
       )}
 
       {toast && (

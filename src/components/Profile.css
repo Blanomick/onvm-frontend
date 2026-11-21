@@ -660,6 +660,11 @@ textarea {
   color: #fff;
 }
 
+.onvm-profile-buttons .onvm-profile-share {
+  width: 43px;
+  padding: 10px 0;
+}
+
 .onvm-profile-buttons .onvm-profile-follow.is-following {
   border-color: var(--profile-border);
   background: #f6f6f9;

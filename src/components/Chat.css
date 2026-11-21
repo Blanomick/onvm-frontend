@@ -819,3 +819,8 @@
   margin-top: 4px;
   overflow-wrap: anywhere;
 }
+.message-html .message-link {
+  color: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+}
