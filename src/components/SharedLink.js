@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiHeart, FiMessageCircle, FiShare2, FiUser } from "react-icons/fi";
 import ShareSheet from "./ShareSheet";
+import { DEFAULT_AVATAR, isDefaultAvatar } from "../utils/avatarFallback";
 import "./SharedLink.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
@@ -20,12 +21,15 @@ function Avatar({ src, size = 44 }) {
   return (
     <img
       className="onvm-shared__avatar"
-      src={src || "/icons/icon-192.png"}
+      src={isDefaultAvatar(src) ? DEFAULT_AVATAR : src}
+      data-avatar="true"
       alt=""
       width={size}
       height={size}
       onError={(event) => {
-        event.currentTarget.src = "/icons/icon-192.png";
+        if (!event.currentTarget.src.endsWith(DEFAULT_AVATAR)) {
+          event.currentTarget.src = DEFAULT_AVATAR;
+        }
       }}
     />
   );

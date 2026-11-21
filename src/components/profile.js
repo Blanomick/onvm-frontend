@@ -626,16 +626,20 @@ console.log("🧪 Retweets :", retweets);
       }
       aria-expanded={isOwner ? showProfileMenu : undefined}
     >
-      {profileUser.profilePicture && !profileImageFailed ? (
+      {profileUser.profilePicture &&
+      !/default-profile\.(png|svg)/i.test(profileUser.profilePicture) &&
+      !profileImageFailed ? (
         <img
           src={resolveMediaUrl(profileUser.profilePicture)}
           alt={profileUser.username || 'Membre ONVM'}
           onError={() => setProfileImageFailed(true)}
         />
       ) : (
-        <span className="onvm-profile-initial">
-          {(profileUser.username || 'O').slice(0, 1).toUpperCase()}
-        </span>
+        <img
+          src="/default-profile.svg"
+          alt={profileUser.username || 'Membre ONVM'}
+          data-avatar="true"
+        />
       )}
 
       {isOwner && (

@@ -7,7 +7,7 @@ function resolvePhoto(value) {
   if (!value || typeof value !== "string") return null;
 
   // Les anciennes images par défaut sont remplacées par notre avatar.
-  if (/\/default-profile\.png(?:[?#]|$)/i.test(value)) {
+  if (/default-profile\.(png|svg)(?:[?#]|$)/i.test(value)) {
     return null;
   }
 
@@ -39,10 +39,14 @@ export default function ProfileAvatar({
       role="img"
       aria-label={`Avatar de ${name}`}
     >
-      <span className="onvm-avatar-sculpture" aria-hidden="true">
-        <span className="onvm-avatar-shoulders" />
-        <span className="onvm-avatar-head" />
-      </span>
+      {/* Icône par défaut quand la personne n'a pas (encore) de photo */}
+      <img
+        className="onvm-avatar-default"
+        src="/default-profile.svg"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+      />
 
       {showPhoto && (
         <img

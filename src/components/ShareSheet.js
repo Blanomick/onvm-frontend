@@ -21,6 +21,7 @@ import {
   openNetwork,
   sendToOnvmFriend,
 } from "../utils/share";
+import { DEFAULT_AVATAR, isDefaultAvatar } from "../utils/avatarFallback";
 import "./ShareSheet.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
@@ -37,7 +38,7 @@ const ICONS = {
 };
 
 function avatarUrl(picture) {
-  if (!picture) return "/icons/icon-192.png";
+  if (isDefaultAvatar(picture)) return DEFAULT_AVATAR;
   if (/^https?:\/\//.test(picture)) return picture;
   return `${apiUrl}${picture.startsWith("/") ? "" : "/"}${picture}`;
 }
@@ -318,7 +319,7 @@ export default function ShareSheet({
             <ul>
               {visibleFriends.map((friend) => (
                 <li key={friend.id}>
-                  <img src={avatarUrl(friend.profilePicture)} alt="" />
+                  <img src={avatarUrl(friend.profilePicture)} alt="" data-avatar="true" />
                   <span>{friend.username}</span>
                   <button
                     type="button"

@@ -224,7 +224,7 @@ const handleClick = async (notif) => {
             fontWeight: 700,
           }}
         >
-          {name.charAt(0).toUpperCase()}
+          <img src="/default-profile.svg" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
 
           {photo && (
             <img

@@ -8,7 +8,6 @@ import {
   FiVideoOff,
   FiVolume2,
   FiVolumeX,
-  FiUser,
 } from "react-icons/fi";
 
 function formatDuration(total) {
@@ -30,13 +29,7 @@ function Avatar({ src, name }) {
       {src && !failed ? (
         <img src={src} alt="" onError={() => setFailed(true)} />
       ) : (
-        <span aria-label={name}>
-          {name && name !== "Votre contact" ? (
-            name.charAt(0).toUpperCase()
-          ) : (
-            <FiUser />
-          )}
-        </span>
+        <img src="/default-profile.svg" alt={name || ""} />
       )}
     </div>
   );

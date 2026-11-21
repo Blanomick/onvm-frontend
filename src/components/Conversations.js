@@ -30,7 +30,7 @@ function ConversationAvatar({ name, source }) {
 
   return (
     <span className="onvm-inbox-avatar">
-      <span aria-hidden="true">{name.charAt(0).toUpperCase()}</span>
+      <img src="/default-profile.svg" alt="" aria-hidden="true" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
 
       {url && failedSource !== url && (
         <img
