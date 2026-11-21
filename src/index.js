@@ -3,10 +3,10 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { installAvatarFallback } from './utils/avatarFallback';
-
-installAvatarFallback();
 import reportWebVitals from './reportWebVitals';
 import AppUpdates, { registerServiceWorker } from './components/AppUpdates';
+
+installAvatarFallback();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
