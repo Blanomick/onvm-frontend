@@ -76,6 +76,29 @@ activeChatRef.current = activeChatId;
 
   const [messages, setMessages] = useState([]);
   const [content, setContent] = useState('');
+  const [typingUsers, setTypingUsers] = useState({});
+  const typingSentRef = useRef(0);
+  const typingStopRef = useRef(null);
+
+  // Prévient l'autre personne qu'on écrit (au plus toutes les 2,5 s)
+  const signalTyping = (typing) => {
+    if (!currentUser?.id || !activeChatId) return;
+    const now = Date.now();
+    if (typing && now - typingSentRef.current < 2500) {
+      clearTimeout(typingStopRef.current);
+      typingStopRef.current = setTimeout(() => signalTyping(false), 4000);
+      return;
+    }
+    typingSentRef.current = typing ? now : 0;
+    clearTimeout(typingStopRef.current);
+    if (typing) typingStopRef.current = setTimeout(() => signalTyping(false), 4000);
+    socket.emit("chat:typing", {
+      chatId: activeChatId,
+      userId: currentUser.id,
+      username: currentUser.username,
+      typing,
+    });
+  };
   const [media, setMedia] = useState(null);
   const [chatUser, setChatUser] = useState(null);
   const [groupMembers, setGroupMembers] = useState([]);
@@ -132,8 +155,34 @@ const messageStatus = useMessageStatus({
     });
   };
 
+  // « … est en train d'écrire »
+  const typingTimers = {};
+  const handleTyping = (event) => {
+    if (String(event.chatId) !== String(activeChatId)) return;
+    if (Number(event.userId) === Number(currentUser.id)) return;
+    const id = String(event.userId);
+    clearTimeout(typingTimers[id]);
+    if (event.typing) {
+      setTypingUsers((current) => ({ ...current, [id]: event.username || "Quelqu’un" }));
+      typingTimers[id] = setTimeout(() => {
+        setTypingUsers((current) => {
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+      }, 6000);
+    } else {
+      setTypingUsers((current) => {
+        const next = { ...current };
+        delete next[id];
+        return next;
+      });
+    }
+  };
+
   socket.on("connect", joinChat);
   socket.on("chat:message", handleIncomingMessage);
+  socket.on("chat:typing", handleTyping);
 
   if (socket.connected) {
     joinChat();
@@ -142,6 +191,9 @@ const messageStatus = useMessageStatus({
   return () => {
     socket.off("connect", joinChat);
     socket.off("chat:message", handleIncomingMessage);
+    socket.off("chat:typing", handleTyping);
+    Object.values(typingTimers).forEach(clearTimeout);
+    setTypingUsers({});
 
     socket.emit("chat:leave", {
       chatId: activeChatId,
@@ -478,16 +530,21 @@ useEffect(() => {
   <strong>{title}</strong>
 <small
   className={`onvm-presence ${
-    messageStatus.available &&
+    Object.keys(typingUsers).length > 0 ||
+    (messageStatus.available &&
     messageStatus.onlineUserIds.some(
       (id) => Number(id) !== Number(currentUser.id)
-    )
+    ))
       ? "is-online"
       : ""
   }`}
   role="status"
 >
-  {!messageStatus.available
+  {Object.keys(typingUsers).length > 0
+    ? isGroup
+      ? `${Object.values(typingUsers).join(", ")} écrit…`
+      : "en train d’écrire…"
+    : !messageStatus.available
     ? "Présence indisponible"
     : isGroup
       ? `${
@@ -686,16 +743,26 @@ useEffect(() => {
           type="text"
           placeholder="Message..."
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            setContent(e.target.value);
+            signalTyping(Boolean(e.target.value.trim()));
+          }}
+          onBlur={() => signalTyping(false)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleSend();
+            if (e.key === 'Enter') {
+              signalTyping(false);
+              handleSend();
+            }
           }}
         />
 
         <button
           type="button"
           className="chat-send-btn"
-          onClick={handleSend}
+          onClick={() => {
+            signalTyping(false);
+            handleSend();
+          }}
           disabled={sending || (!content.trim() && !media)}
           aria-label="Envoyer"
         >
