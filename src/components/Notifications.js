@@ -14,6 +14,7 @@ function textFor(n) {
     case 'retweet_publication':return `${actor} a repartagé votre publication`;
     case 'comment_publication':return `${actor} a commenté votre publication`;
     case 'mention':            return `${actor} vous a mentionné`;
+    case 'live':               return `🔴 ${actor} est en direct`;
     case 'like_story':         return `${actor} a aimé votre story`;
     case 'comment_story':      return `${actor} a commenté votre story`;
     case 'message':            return `${actor} vous a envoyé un message`;

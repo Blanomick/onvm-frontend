@@ -11,7 +11,8 @@ import Settings from './components/Settings';
 import Communities from './components/Communities';
 import CreateCommunity from './components/CreateCommunity';
 import MainNavigation from './components/MainNavigation';
-import Live from './components/Live';
+import LivesHome from './components/live/LivesHome';
+import LiveRoom from './components/live/LiveRoom';
 import Banner from './components/Banner';
 import EditBio from './components/EditBio';
 import Download from './components/Download';
@@ -266,9 +267,15 @@ element={currentUser ? <Chat currentUser={currentUser} /> : <Navigate to="/auth"
           />
 
           {/* Page de Live */}
+          <Route path="/live" element={<Navigate to="/lives" replace />} />
+          <Route path="/lives" element={user ? <LivesHome /> : <Navigate to="/auth" />} />
           <Route
-            path="/live"
-            element={user ? <Live currentUser={user} /> : <Navigate to="/auth" />}
+            path="/lives/new"
+            element={user ? <LiveRoom mode="host" currentUser={user} /> : <Navigate to="/auth" />}
+          />
+          <Route
+            path="/lives/:liveId"
+            element={user ? <LiveRoom mode="watch" currentUser={user} /> : <Navigate to="/auth" />}
           />
              </Routes>
       </div>
