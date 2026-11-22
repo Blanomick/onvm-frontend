@@ -3,10 +3,14 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
 import { installAvatarFallback } from './utils/avatarFallback';
+import { startNouchi } from './utils/nouchi';
 import reportWebVitals from './reportWebVitals';
 import AppUpdates, { registerServiceWorker } from './components/AppUpdates';
 
 installAvatarFallback();
+// Mode nouchi (si activé dans les paramètres)
+window.addEventListener('load', () => startNouchi());
+setTimeout(() => startNouchi(), 300);
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

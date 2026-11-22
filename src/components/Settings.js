@@ -18,11 +18,13 @@ import ProfileAvatar from "./ProfileAvatar";
 import BottomNav from "./BottomNav";
 import SafetyReportForm from "./SafetyReportForm";
 import "./Settings.css";
+import { isNouchi, setNouchi } from "../utils/nouchi";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
 
 const Settings = ({ currentUser }) => {
   const navigate = useNavigate();
+  const [nouchiOn, setNouchiOn] = useState(isNouchi);
 
   const [balance, setBalance] = useState(null);
   const [loadingBalance, setLoadingBalance] = useState(true);
@@ -271,6 +273,39 @@ const Settings = ({ currentUser }) => {
           </div>
         </section>
 
+
+        <section
+          className="onvm-settings__section"
+          aria-labelledby="settings-language-title"
+          data-no-nouchi
+        >
+          <h2 id="settings-language-title">Langue de l’appli</h2>
+          <div className="onvm-settings__language" role="radiogroup" aria-label="Langue de l’appli">
+            {[
+              ["fr", "🇫🇷 Français", "Textes classiques"],
+              ["nouchi", "🇨🇮 Nouchi", "Ambiance 100 % ivoirienne"],
+            ].map(([value, label, hint]) => {
+              const active = (value === "nouchi") === nouchiOn;
+              return (
+                <button
+                  key={value}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  className={active ? "is-active" : ""}
+                  onClick={() => {
+                    if (active) return;
+                    setNouchiOn(value === "nouchi");
+                    setNouchi(value === "nouchi");
+                  }}
+                >
+                  <strong>{label}</strong>
+                  <span>{hint}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
         <section
           className="onvm-settings__section"

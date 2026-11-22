@@ -414,3 +414,34 @@
 .onvm-safety a {
   text-decoration: underline;
 }
+/* Choix de la langue */
+.onvm-settings__language {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.onvm-settings__language button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.onvm-settings__language button span {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.onvm-settings__language button.is-active {
+  border-color: #f97316;
+  background: #fff7ed;
+}
