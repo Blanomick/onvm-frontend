@@ -11,6 +11,7 @@ import axios from 'axios'; // ✅ nécessaire pour handleComment
 import { FiSettings, FiShare2 } from 'react-icons/fi';
 import { BsQrCode } from 'react-icons/bs';
 import ShareSheet from './ShareSheet';
+import './discover/Discover.css';
 import { useTranslation } from 'react-i18next';
 import BioText from "./BioText";
 import {
@@ -701,6 +702,16 @@ console.log("🧪 Retweets :", retweets);
     {profileUser.username || 'Membre ONVM'}
   </h1>
 
+  {profileUser.commune && (
+    <button
+      type="button"
+      className="onvm-profile-commune"
+      onClick={() => navigate('/pres-de-moi')}
+      title="Voir ce qui se passe près de chez toi"
+    >
+      📍 {profileUser.commune}
+    </button>
+  )}
   <p className="onvm-profile-bio">
   {profileUser.bio ? (
     <BioText value={profileUser.bio} />

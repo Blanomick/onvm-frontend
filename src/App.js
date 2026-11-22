@@ -24,6 +24,7 @@ import Videos from './components/Videos';
 import SharedLink, { AFTER_LOGIN_KEY } from './components/SharedLink';
 import Trends from './components/discover/Trends';
 import HashtagFeed from './components/discover/HashtagFeed';
+import Nearby from './components/discover/Nearby';
 import { useNavigate } from 'react-router-dom';
 import { disablePush } from './utils/push';
 import StoryPage from './components/StoryPage';
@@ -115,6 +116,10 @@ React.useEffect(() => {
           {/* Hashtags et tendances (publics) */}
           <Route path="/tendances" element={<Trends />} />
           <Route path="/hashtag/:tag" element={<HashtagFeed user={user} />} />
+          <Route
+            path="/pres-de-moi"
+            element={user ? <Nearby user={user} /> : <Navigate to="/auth" replace />}
+          />
 
           <Route path="/create-publication" element={<CreatePublication currentUser={currentUser} />} />
            

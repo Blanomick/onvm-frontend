@@ -353,3 +353,132 @@
   color: #fff;
   font-weight: 700;
 }
+
+/* Près de moi */
+.onvm-nearby__intro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin: 18px 0 16px;
+  color: #111;
+  text-align: center;
+}
+
+.onvm-nearby__intro h2 {
+  margin: 6px 0 0;
+  font-size: 22px;
+}
+
+.onvm-nearby__intro p {
+  max-width: 360px;
+  margin: 0;
+  color: #6b7280;
+}
+
+.onvm-nearby__group h3 {
+  margin: 16px 0 8px;
+  color: #6b7280;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.onvm-nearby__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.onvm-nearby__chips button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  background: #fff;
+  color: #111;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.onvm-nearby__chips button.is-active {
+  border-color: #f97316;
+  background: #fff7ed;
+}
+
+.onvm-nearby__chips small {
+  padding: 1px 7px;
+  border-radius: 99px;
+  background: #f3f4f6;
+  color: #6b7280;
+  font-size: 11px;
+}
+
+.onvm-nearby__cancel {
+  display: block;
+  margin: 22px auto 0;
+  padding: 10px 18px;
+  border: 0;
+  border-radius: 99px;
+  background: #f3f4f6;
+  color: #111;
+  font-weight: 600;
+}
+
+.onvm-nearby__people {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onvm-nearby__people button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 2px;
+  border: 0;
+  border-bottom: 1px solid #f3f4f6;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.onvm-nearby__people img {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #0b0b0b;
+}
+
+.onvm-nearby__people span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.onvm-nearby__people small {
+  overflow: hidden;
+  color: #6b7280;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onvm-profile-commune {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 99px;
+  background: #fff7ed;
+  color: #c2410c;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}

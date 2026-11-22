@@ -1,21 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiArrowLeft, FiHeart, FiMessageCircle, FiShare2 } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import BottomNav from "../BottomNav";
 import ShareSheet from "../ShareSheet";
-import RichText from "./RichText";
+import PostCard from "./PostCard";
 import "./Discover.css";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
-
-function mediaUrl(url) {
-  if (!url) return "";
-  return /^https?:\/\//.test(url) ? url : `${apiUrl}${url.startsWith("/") ? "" : "/"}${url}`;
-}
-
-function isVideo(item) {
-  return /video/i.test(item.kind || item.type || "") || /\.(mp4|mov|webm|m4v)(\?|$)/i.test(item.url || "");
-}
 
 // Toutes les publications d'un #hashtag
 export default function HashtagFeed({ user }) {
@@ -66,39 +57,7 @@ export default function HashtagFeed({ user }) {
 
       <div className="onvm-tagfeed">
         {(posts || []).map((post) => (
-          <article key={post.id} className="onvm-tagpost">
-            <button
-              type="button"
-              className="onvm-tagpost__author"
-              onClick={() => navigate(`/profile/${post.userId}`)}
-            >
-              <img src={mediaUrl(post.profilePicture) || "/default-profile.svg"} alt="" data-avatar="true" />
-              <span>
-                <strong>{post.username || "Membre ONVM"}</strong>
-                <small>
-                  {new Date(post.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}
-                </small>
-              </span>
-            </button>
-
-            {post.content && <RichText as="p" className="onvm-tagpost__text" text={post.content} />}
-
-            {(post.media || []).slice(0, 1).map((item, index) =>
-              isVideo(item) ? (
-                <video key={index} src={mediaUrl(item.url)} controls playsInline preload="metadata" />
-              ) : (
-                <img key={index} src={mediaUrl(item.url)} alt="" loading="lazy" />
-              )
-            )}
-
-            <footer>
-              <span><FiHeart /> {post.likeCount || 0}</span>
-              <span><FiMessageCircle /> {(post.comments || []).length}</span>
-              <button type="button" onClick={() => setShareId(post.id)}>
-                <FiShare2 /> Partager
-              </button>
-            </footer>
-          </article>
+          <PostCard key={post.id} post={post} onShare={(item) => setShareId(item.id)} />
         ))}
       </div>
 

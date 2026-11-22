@@ -539,6 +539,9 @@ const closeShareModal = () => {
               {label}
             </button>
           ))}
+          <button type="button" onClick={() => navigate('/pres-de-moi')}>
+            📍 Près de moi
+          </button>
           <button type="button" onClick={() => navigate('/tendances')}>
             # Tendances
           </button>
