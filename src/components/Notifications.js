@@ -13,6 +13,7 @@ function textFor(n) {
     case 'like_publication':   return `${actor} a aimé votre publication`;
     case 'retweet_publication':return `${actor} a repartagé votre publication`;
     case 'comment_publication':return `${actor} a commenté votre publication`;
+    case 'mention':            return `${actor} vous a mentionné`;
     case 'like_story':         return `${actor} a aimé votre story`;
     case 'comment_story':      return `${actor} a commenté votre story`;
     case 'message':            return `${actor} vous a envoyé un message`;

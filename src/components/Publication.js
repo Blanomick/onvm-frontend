@@ -1,5 +1,7 @@
   import React, { useState, useEffect, useRef , useCallback} from 'react';
 import ShareSheet from './ShareSheet';
+import RichText from './discover/RichText';
+import './discover/Discover.css';
 import axios from 'axios';
 import './Publication.css';
 import MainNavigation from './MainNavigation';
@@ -104,7 +106,7 @@ function PublicationText({ text }) {
           canExpand && !expanded ? "onvm-text-collapsed" : ""
         }`}
       >
-        {value}
+        <RichText text={value} />
       </p>
 
       {canExpand && (
@@ -124,6 +126,15 @@ function PublicationText({ text }) {
 const Publication = ({ user }) => {
   const [publications, setPublications] = useState([]);
   const [viewMode, setViewMode] = useState('feed');
+  // Fil : « Pour toi » (classé), « Abonnements », « Récent »
+  const [feedMode, setFeedMode] = useState(() => {
+    try {
+      return localStorage.getItem('onvm_feed_mode') || 'foryou';
+    } catch {
+      return 'foryou';
+    }
+  });
+  const [feedLoading, setFeedLoading] = useState(false);
 const [shortIndex, setShortIndex] = useState(0);
   const [content, setContent] = useState('');
   const [media, setMedia] = useState(null);
@@ -171,17 +182,14 @@ useEffect(() => {
  
 
 const fetchPublications = useCallback(async () => {
+  setFeedLoading(true);
   try {
+    // Le serveur renvoie déjà commentaires et réponses : une seule requête
     const response = await axios.get(`${apiUrl}/api/publications`, {
-      params: { userId: user?.id }
+      params: { userId: user?.id, feed: feedMode }
     });
 
-    const publicationsWithDetails = await Promise.all(
-      response.data.map(async (publication) => {
-        const commentsResponse = await axios.get(`${apiUrl}/api/publications/${publication.id}/comments`);
-        return { ...publication, comments: commentsResponse.data };
-      })
-    );
+    const publicationsWithDetails = Array.isArray(response.data) ? response.data : [];
 
     setPublications(publicationsWithDetails);
 
@@ -192,8 +200,20 @@ const fetchPublications = useCallback(async () => {
     setRetweets(initialRetweets);
   } catch (err) {
     console.error('[ERREUR] Erreur lors de la récupération des publications:', err);
+  } finally {
+    setFeedLoading(false);
   }
-}, [user?.id]);
+}, [user?.id, feedMode]);
+
+const changeFeed = (mode) => {
+  setFeedMode(mode);
+  try {
+    localStorage.setItem('onvm_feed_mode', mode);
+  } catch {
+    // ignore
+  }
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
 
 
   const fetchUsersList = useCallback(async () => {
@@ -501,6 +521,40 @@ const closeShareModal = () => {
   
       {/* Formulaire de création de publication */}
      
+      {/* Onglets du fil */}
+      {viewMode !== 'shorts' && (
+        <nav className="onvm-feed-tabs" aria-label="Choisir le fil">
+          {[
+            ['foryou', 'Pour toi'],
+            ['following', 'Abonnements'],
+            ['recent', 'Récent'],
+          ].map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              className={feedMode === mode ? 'is-active' : ''}
+              aria-pressed={feedMode === mode}
+              onClick={() => changeFeed(mode)}
+            >
+              {label}
+            </button>
+          ))}
+          <button type="button" onClick={() => navigate('/tendances')}>
+            # Tendances
+          </button>
+        </nav>
+      )}
+
+      {feedMode === 'following' && !feedLoading && displayedPublications.length === 0 && (
+        <div className="onvm-discover__empty">
+          <p>Tu ne suis encore personne.</p>
+          <p>Abonne-toi à des membres pour voir leurs publications ici.</p>
+          <button type="button" onClick={() => changeFeed('foryou')}>
+            Découvrir « Pour toi »
+          </button>
+        </div>
+      )}
+
       {/* Liste des publications */}
       <div className="publications-list">
       {displayedPublications.length > 0 ? (

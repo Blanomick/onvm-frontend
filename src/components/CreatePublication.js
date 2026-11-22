@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import MentionTextarea from "./discover/MentionTextarea";
 import {
   FiX,
   FiImage,
@@ -466,13 +467,13 @@ export default function CreatePublication({ currentUser }) {
             {publicationText || "Publication sans légende"}
           </p>
         ) : (
-          <textarea
+          <MentionTextarea
             className="onvm-compose__text"
             aria-label="Texte de la publication"
-            placeholder="Qu’as-tu envie de partager ?"
+            placeholder="Qu’as-tu envie de partager ? Ajoute des #hashtags et @mentionne tes amis"
             value={caption}
-            onChange={(event) => {
-              setCaption(event.target.value);
+            onChange={(next) => {
+              setCaption(next);
               setPublishError("");
             }}
             disabled={publishing}

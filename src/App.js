@@ -22,6 +22,8 @@ import CreateStory from './components/CreateStory';
 import CreatePublication from './components/CreatePublication';
 import Videos from './components/Videos';
 import SharedLink, { AFTER_LOGIN_KEY } from './components/SharedLink';
+import Trends from './components/discover/Trends';
+import HashtagFeed from './components/discover/HashtagFeed';
 import { useNavigate } from 'react-router-dom';
 import { disablePush } from './utils/push';
 import StoryPage from './components/StoryPage';
@@ -109,6 +111,10 @@ React.useEffect(() => {
           {/* Liens de partage uniques (publics, même sans compte) */}
           <Route path="/p/:code" element={<SharedLink kind="p" user={user} />} />
           <Route path="/u/:code" element={<SharedLink kind="u" user={user} />} />
+
+          {/* Hashtags et tendances (publics) */}
+          <Route path="/tendances" element={<Trends />} />
+          <Route path="/hashtag/:tag" element={<HashtagFeed user={user} />} />
 
           <Route path="/create-publication" element={<CreatePublication currentUser={currentUser} />} />
            

@@ -18,6 +18,7 @@ import CommentsSection from "./CommentsSection";
 import BottomNav from "./BottomNav";
 import SmartVideo from "./SmartVideo";
 import "./Videos.css";
+import RichText from "./discover/RichText";
 
 const apiUrl = (process.env.REACT_APP_API_URL || "").replace(/\/+$/, "");
 const PAGE_SIZE = 6;
@@ -207,7 +208,7 @@ function VideoSlide({
             className={`onvm-reel__caption ${expanded ? "is-expanded" : ""}`}
             onClick={() => setExpanded((value) => !value)}
           >
-            {caption}
+            <RichText text={caption} />
           </p>
         )}
       </footer>

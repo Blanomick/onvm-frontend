@@ -1,0 +1,355 @@
+/* Hashtags, mentions, tendances */
+.onvm-rich-tag,
+.onvm-rich-mention {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: #2563eb;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onvm-rich-link {
+  color: #2563eb;
+  word-break: break-all;
+}
+
+.onvm-discover {
+  min-height: 100dvh;
+  padding: 0 14px calc(96px + env(safe-area-inset-bottom, 0px));
+  background: #fff;
+  color: #111;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.onvm-discover button {
+  font: inherit;
+  cursor: pointer;
+}
+
+.onvm-discover__top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 40px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) 0 10px;
+  background: #fff;
+}
+
+.onvm-discover__top h1 {
+  margin: 0;
+  overflow: hidden;
+  font-size: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onvm-discover__top > button:first-child {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #111;
+  font-size: 19px;
+}
+
+.onvm-discover__link {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 99px;
+  background: #f3f4f6;
+  color: #111;
+  font-size: 13px !important;
+  font-weight: 600;
+}
+
+.onvm-discover__search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: #f3f4f6;
+  color: #6b7280;
+}
+
+.onvm-discover__search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #111;
+  font: inherit;
+  font-size: 16px;
+  outline: none;
+}
+
+.onvm-discover__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin: 50px 10px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.onvm-discover__empty p {
+  margin: 0;
+}
+
+.onvm-discover__empty button {
+  margin-top: 10px;
+  padding: 11px 18px;
+  border: 0;
+  border-radius: 99px;
+  background: #111827;
+  color: #fff;
+  font-weight: 600;
+}
+
+.onvm-discover__count {
+  margin: 0 0 10px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.onvm-discover__spinner {
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 60px auto;
+  border: 3px solid #e5e7eb;
+  border-top-color: #111827;
+  border-radius: 50%;
+  animation: onvm-discover-spin 800ms linear infinite;
+}
+
+@keyframes onvm-discover-spin {
+  to { transform: rotate(360deg); }
+}
+
+.onvm-trends {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.onvm-trends button {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 4px;
+  border: 0;
+  border-bottom: 1px solid #f3f4f6;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.onvm-trends__rank {
+  width: 26px;
+  color: #9ca3af;
+  font-weight: 700;
+  text-align: center;
+}
+
+.onvm-trends__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.onvm-trends__body strong {
+  overflow: hidden;
+  font-size: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.onvm-trends__body small {
+  color: #6b7280;
+}
+
+.onvm-trends__hot {
+  color: #ef4444;
+}
+
+.onvm-tagfeed {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.onvm-tagpost {
+  padding: 14px;
+  border: 1px solid #f0f0f0;
+  border-radius: 18px;
+}
+
+.onvm-tagpost__author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+}
+
+.onvm-tagpost__author img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #0b0b0b;
+}
+
+.onvm-tagpost__author span {
+  display: flex;
+  flex-direction: column;
+}
+
+.onvm-tagpost__author small {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.onvm-tagpost__text {
+  margin: 10px 0 0;
+  line-height: 1.45;
+  white-space: pre-line;
+  word-break: break-word;
+}
+
+.onvm-tagpost img:not(.onvm-tagpost__author img),
+.onvm-tagpost video {
+  display: block;
+  width: 100%;
+  max-height: 70dvh;
+  margin-top: 10px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: #000;
+}
+
+.onvm-tagpost footer {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+  color: #4b5563;
+}
+
+.onvm-tagpost footer span,
+.onvm-tagpost footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.onvm-tagpost footer button {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 99px;
+  background: #f3f4f6;
+  color: #111;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Onglets du fil */
+.onvm-feed-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 12px;
+  padding: 0 2px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.onvm-feed-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.onvm-feed-tabs button {
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 99px;
+  background: #fff;
+  color: #4b5563;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.onvm-feed-tabs button.is-active {
+  border-color: #111827;
+  background: #111827;
+  color: #fff;
+}
+
+/* Suggestions @mention */
+.onvm-mention-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 4px 0 0;
+  padding: 6px;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  list-style: none;
+}
+
+.onvm-mention-list button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: none;
+  color: #111;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.onvm-mention-list button:hover,
+.onvm-mention-list button:focus {
+  background: #f3f4f6;
+}
+
+.onvm-mention-list img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #0b0b0b;
+}
+
+/* Sur les vidéos (fond sombre) */
+.onvm-reel__caption .onvm-rich-tag,
+.onvm-reel__caption .onvm-rich-mention,
+.onvm-reel__caption .onvm-rich-link {
+  color: #fff;
+  font-weight: 700;
+}

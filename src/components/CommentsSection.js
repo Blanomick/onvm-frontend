@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
 import './CommentsSection.css';
+import RichText from './discover/RichText';
 
 const apiUrl = process.env.REACT_APP_API_URL;
 
@@ -532,7 +533,7 @@ export default function CommentsSection({
                 )}
               </div>
 
-              {comment.comment && <p>{comment.comment}</p>}
+              {comment.comment && <RichText as="p" text={comment.comment} />}
 
               {comment.media && (
                 <CommentAttachment

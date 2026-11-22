@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FiHeart, FiMessageCircle, FiShare2, FiUser } from "react-icons/fi";
 import ShareSheet from "./ShareSheet";
+import RichText from "./discover/RichText";
 import { DEFAULT_AVATAR, isDefaultAvatar } from "../utils/avatarFallback";
 import "./SharedLink.css";
 
@@ -156,7 +157,7 @@ export default function SharedLink({ kind, user }) {
             </span>
           </button>
 
-          {data.content && <p className="onvm-shared__text">{data.content}</p>}
+          {data.content && <RichText as="p" className="onvm-shared__text" text={data.content} />}
 
           {data.media.map((item, index) =>
             item.kind === "video" ? (
